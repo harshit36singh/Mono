@@ -1,6 +1,18 @@
 package com.mono.launcher.ui.home
 
 import android.graphics.Rect
+import android.app.ActivityOptions
+import android.os.Bundle
+import android.view.View
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -15,7 +27,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,7 +69,7 @@ import kotlin.math.abs
 
 /** Callbacks Home needs from the view model / activity. */
 class HomeActions(
-    val launch: (AppEntry, Rect?) -> Unit,
+    val launch: (AppEntry, Rect?, Bundle?) -> Unit,
     val showActions: (AppEntry) -> Unit,
     val openSearch: () -> Unit,
     val openSettings: () -> Unit,
@@ -71,8 +82,13 @@ class HomeActions(
 )
 
 @Composable
-fun HomeScreen(state: HomeUiState, actions: HomeActions) {
+fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
     val context = LocalContext.current
+    val view = LocalView.current
+    // Apps open with a clip-reveal from the row that was touched.
+    val launch: (AppEntry, Rect?) -> Unit = { app, r -> actions.launch(app, r, revealOptions(view, r)) }
+    var indexActive by remember { mutableStateOf(false) }
+    val homeAlpha by animateFloatAsState(if (indexActive) 0f else 1f, tween(if (indexActive) 120 else 200), label = "homeAlpha")
     val haptic = LocalHapticFeedback.current
     val settings = state.settings
     val dark = LocalIsDark.current
@@ -132,6 +148,7 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions) {
         Column(
             Modifier
                 .fillMaxSize()
+                .graphicsLayer { alpha = homeAlpha }
                 .padding(
                     start = if (railOnRight) 28.dp else 56.dp,
                     end = if (railOnRight) 56.dp else 28.dp,
@@ -145,27 +162,36 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions) {
             state.media?.let {
                 MediaCard(it, actions.mediaPrevious, actions.mediaPlayPause, actions.mediaNext, Modifier.padding(bottom = 20.dp))
             }
-            Favorites(state, actions)
-            Spacer(Modifier.height(20.dp))
-            SearchPill(onClick = actions.openSearch)
+            Favorites(state, actions, launch)
+            Spacer(Modifier.height(SearchButtonSize + 12.dp))
         }
 
-        AlphabetRail(
+        SearchButton(
+            onClick = actions.openSearch,
+            modifier = Modifier
+                .align(if (railOnRight) Alignment.BottomEnd else Alignment.BottomStart)
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+        )
+
+        AppIndex(
             groups = state.apps.groups,
+            style = settings.railStyle,
             side = settings.railSide,
             iconStyle = settings.iconStyle,
             fontScale = settings.fontScale,
             haptics = settings.haptics,
-            onLaunch = { app -> actions.launch(app, null) },
+            resetTick = resetTick,
+            bottomInset = SearchButtonSize + 24.dp,
+            onActiveChange = { indexActive = it },
+            onLaunch = launch,
             onLongPress = actions.showActions,
-            modifier = Modifier.padding(top = 140.dp, bottom = 72.dp),
         )
     }
 }
 
 /** Up to 8 favorites. Long-press + drag reorders; long-press in place opens app actions. */
 @Composable
-private fun Favorites(state: HomeUiState, actions: HomeActions) {
+private fun Favorites(state: HomeUiState, actions: HomeActions, launch: (AppEntry, Rect?) -> Unit) {
     val settings = state.settings
     val haptic = LocalHapticFeedback.current
     val favorites = state.apps.favorites
@@ -227,7 +253,7 @@ private fun Favorites(state: HomeUiState, actions: HomeActions) {
                         key = key,
                         onTap = {
                             if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            actions.launch(app, bounds[key])
+                            launch(app, bounds[key])
                         },
                         onLongPress = { actions.showActions(app) },
                         onLongPressStart = {
@@ -268,19 +294,31 @@ private fun Favorites(state: HomeUiState, actions: HomeActions) {
     }
 }
 
+private val SearchButtonSize = 52.dp
+
+/** Minimal round search button; the glyph is drawn so no icon library is needed. */
 @Composable
-private fun SearchPill(onClick: () -> Unit) {
+private fun SearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val glyph = MaterialTheme.colorScheme.onSurface
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f),
+        modifier = modifier
+            .size(SearchButtonSize)
             .semantics { contentDescription = "Search apps" },
     ) {
-        Box(Modifier.padding(horizontal = 20.dp), contentAlignment = Alignment.CenterStart) {
-            Text("Search", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Canvas(Modifier.padding(16.dp)) {
+            val stroke = 2.dp.toPx()
+            val r = size.minDimension * 0.36f
+            val c = Offset(size.width * 0.44f, size.height * 0.44f)
+            drawCircle(glyph, radius = r, center = c, style = Stroke(stroke))
+            val start = c + Offset(r * 0.72f, r * 0.72f)
+            drawLine(glyph, start, Offset(size.width * 0.92f, size.height * 0.92f), stroke, StrokeCap.Round)
         }
     }
+}
+
+private fun revealOptions(view: View, r: Rect?): Bundle? = r?.let {
+    ActivityOptions.makeClipRevealAnimation(view, it.left, it.top, it.width(), it.height()).toBundle()
 }

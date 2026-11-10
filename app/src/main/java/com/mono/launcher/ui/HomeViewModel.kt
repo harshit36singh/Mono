@@ -3,6 +3,7 @@ package com.mono.launcher.ui
 import android.content.pm.ShortcutInfo
 import android.graphics.Rect
 import android.net.Uri
+import android.os.Bundle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mono.launcher.data.AppEntry
@@ -35,6 +36,9 @@ import javax.inject.Inject
 
 /** Group label used for the separate work-profile section of the A–Z rail. */
 const val WORK_GROUP = "▣"
+
+/** Rail entry for the favorites list, shown first. */
+const val FAVORITES_GROUP = "★"
 
 data class AppLists(
     val favorites: List<AppEntry> = emptyList(),
@@ -72,11 +76,14 @@ class HomeViewModel @Inject constructor(
         val visible = all.filterNot { it.isHidden }
         val personal = visible.filterNot { it.isWorkProfile }
         val work = visible.filter { it.isWorkProfile }
-        val groups = LetterIndex.group(personal).let { g ->
-            if (work.isEmpty()) g else g + LetterGroup(WORK_GROUP, LetterIndex.group(work).flatMap { it.apps })
+        val favorites = visible.filter { it.isFavorite }.sortedBy { it.favoriteOrder ?: Int.MAX_VALUE }
+        val groups = buildList {
+            add(LetterGroup(FAVORITES_GROUP, favorites))
+            addAll(LetterIndex.group(personal))
+            if (work.isNotEmpty()) add(LetterGroup(WORK_GROUP, LetterIndex.group(work).flatMap { it.apps }))
         }
         AppLists(
-            favorites = visible.filter { it.isFavorite }.sortedBy { it.favoriteOrder ?: Int.MAX_VALUE },
+            favorites = favorites,
             visible = visible,
             hidden = all.filter { it.isHidden }.sortedBy { it.displayLabel.lowercase() },
             groups = groups,
@@ -100,6 +107,10 @@ class HomeViewModel @Inject constructor(
 
     private val _overlay = MutableStateFlow<Overlay>(Overlay.None)
     val overlay: StateFlow<Overlay> = _overlay.asStateFlow()
+
+    /** Bumped when Home should return to its resting state (Home pressed, app opened). */
+    private val _resetTick = MutableStateFlow(0)
+    val resetTick: StateFlow<Int> = _resetTick.asStateFlow()
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -132,11 +143,13 @@ class HomeViewModel @Inject constructor(
     fun onHomePressed() {
         _overlay.value = Overlay.None
         _query.value = ""
+        _resetTick.value++
     }
 
     /** Leaving Home (e.g. an app opened): drop transient overlays but keep Settings open. */
     fun onStop() {
         if (_overlay.value != Overlay.Settings) _overlay.value = Overlay.None
+        _resetTick.value++
     }
 
     fun setQuery(q: String) {
@@ -145,8 +158,8 @@ class HomeViewModel @Inject constructor(
 
     // --- apps -----------------------------------------------------------------------------
 
-    fun launch(app: AppEntry, bounds: Rect? = null): Boolean {
-        val ok = repo.launch(app, bounds)
+    fun launch(app: AppEntry, bounds: Rect? = null, options: Bundle? = null): Boolean {
+        val ok = repo.launch(app, bounds, options)
         if (ok && _overlay.value != Overlay.Settings) _overlay.value = Overlay.None
         return ok
     }
