@@ -96,7 +96,7 @@ private fun StepHeader(step: Int) {
                     Modifier
                         .size(24.dp, 4.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(if (i <= step) c.onBackground else Mono.palette.track),
+                        .background(if (i <= step) Mono.palette.accent else Mono.palette.track),
                 )
             }
         }
@@ -170,11 +170,11 @@ private fun RoundCheck(checked: Boolean, enabled: Boolean) {
         Modifier
             .size(22.dp)
             .clip(CircleShape)
-            .background(if (checked) c.onBackground else c.background.copy(alpha = 0f))
+            .background(if (checked) Mono.palette.accent else c.background.copy(alpha = 0f))
             .then(if (checked) Modifier else Modifier.border(1.5.dp, outline, CircleShape)),
         contentAlignment = Alignment.Center,
     ) {
-        if (checked) LineIcon(Icons.Check, 12.dp, c.background, strokeWidth = 3.5f)
+        if (checked) LineIcon(Icons.Check, 12.dp, Mono.palette.onAccent, strokeWidth = 3.5f)
     }
 }
 

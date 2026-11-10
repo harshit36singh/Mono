@@ -116,7 +116,7 @@ fun AppActionsSheet(
                                 .padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            LineIcon(Icons.Shortcut, 16.dp, c.onSurface)
+                            LineIcon(Icons.Shortcut, 16.dp, if (Mono.palette.colorful) Mono.palette.accent else c.onSurface)
                             Spacer(Modifier.width(8.dp))
                             Text((sc.shortLabel ?: sc.longLabel ?: sc.id).toString(), fontSize = 15.sp, maxLines = 1)
                         }
@@ -186,7 +186,7 @@ fun RenameDialog(app: AppEntry, onRename: (String?) -> Unit, onDismiss: () -> Un
                     value = text,
                     onValueChange = { text = it },
                     singleLine = true,
-                    textStyle = TextStyle(fontSize = 17.sp, color = c.onSurface),
+                    textStyle = androidx.compose.material3.LocalTextStyle.current.merge(TextStyle(fontSize = 17.sp, color = c.onSurface)),
                     cursorBrush = SolidColor(c.onSurface),
                     decorationBox = { inner ->
                         Box(
@@ -213,11 +213,11 @@ fun RenameDialog(app: AppEntry, onRename: (String?) -> Unit, onDismiss: () -> Un
                     Modifier
                         .height(44.dp)
                         .clip(RoundedCornerShape(22.dp))
-                        .background(c.onSurface)
+                        .background(Mono.palette.accent)
                         .clickable(role = Role.Button) { onRename(text) }
                         .padding(horizontal = 22.dp),
                     contentAlignment = Alignment.Center,
-                ) { Text("Save", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = c.surface) }
+                ) { Text("Save", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Mono.palette.onAccent) }
             }
         }
     }

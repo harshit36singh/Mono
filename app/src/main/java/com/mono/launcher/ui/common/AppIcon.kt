@@ -1,5 +1,6 @@
 package com.mono.launcher.ui.common
 
+import com.mono.launcher.ui.theme.Mono
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -30,8 +31,10 @@ private val grayscale = ColorFilter.colorMatrix(ColorMatrix().apply { setToSatur
  * calm, single-colour column; apps without a glyph fall back to a soft greyscale icon.
  */
 @Composable
-fun AppIcon(app: AppEntry, style: IconStyle, size: Dp, modifier: Modifier = Modifier) {
-    if (style == IconStyle.NONE) return
+fun AppIcon(app: AppEntry, iconStyle: IconStyle, size: Dp, modifier: Modifier = Modifier) {
+    if (iconStyle == IconStyle.NONE) return
+    // Colour mode shows every icon in full colour.
+    val style = if (Mono.palette.colorful) IconStyle.SYSTEM else iconStyle
     val cache = LocalIconCache.current
     val px = with(LocalDensity.current) { size.roundToPx() }
     val minimal = style == IconStyle.MINIMAL

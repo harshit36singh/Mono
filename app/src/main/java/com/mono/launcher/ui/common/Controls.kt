@@ -44,12 +44,12 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
         modifier
             .height(52.dp)
             .clip(RoundedCornerShape(26.dp))
-            .background(if (enabled) c.onBackground else c.onBackground.copy(alpha = 0.38f))
+            .background(if (enabled) Mono.palette.accent else Mono.palette.accent.copy(alpha = 0.38f))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 32.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = c.background)
+        Text(text, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Mono.palette.onAccent)
     }
 }
 
@@ -103,8 +103,8 @@ fun SettingGroup(modifier: Modifier = Modifier, contentPadding: Int = 4, content
 fun MonoSwitch(checked: Boolean, modifier: Modifier = Modifier) {
     val c = MaterialTheme.colorScheme
     val p = Mono.palette
-    val track by animateColorAsState(if (checked) c.onBackground else p.track, tween(150), label = "track")
-    val thumb by animateColorAsState(if (checked) c.background else p.tertiaryText, tween(150), label = "thumb")
+    val track by animateColorAsState(if (checked) p.accent else p.track, tween(150), label = "track")
+    val thumb by animateColorAsState(if (checked) p.onAccent else p.tertiaryText, tween(150), label = "thumb")
     val x by animateDpAsState(if (checked) 21.dp else 3.dp, tween(150), label = "thumbX")
     Box(modifier.size(44.dp, 26.dp).clip(CircleShape).background(track)) {
         Box(Modifier.offset(x = x, y = 3.dp).size(20.dp).clip(CircleShape).background(thumb))
@@ -129,7 +129,7 @@ fun <T> Segmented(options: List<T>, selected: T, label: (T) -> String, onSelect:
                     .weight(1f)
                     .height(36.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(if (on) c.onBackground else c.background.copy(alpha = 0f))
+                    .background(if (on) Mono.palette.accent else c.background.copy(alpha = 0f))
                     .clickable(role = Role.RadioButton) { onSelect(o) },
                 contentAlignment = Alignment.Center,
             ) {
@@ -137,7 +137,7 @@ fun <T> Segmented(options: List<T>, selected: T, label: (T) -> String, onSelect:
                     label(o),
                     fontSize = 14.sp,
                     fontWeight = if (on) FontWeight.Medium else FontWeight.Normal,
-                    color = if (on) c.background else c.onSurfaceVariant,
+                    color = if (on) Mono.palette.onAccent else c.onSurfaceVariant,
                 )
             }
         }
@@ -158,7 +158,7 @@ fun Tile(
         modifier
             .clip(RoundedCornerShape(radius.dp))
             .background(c.surfaceContainer)
-            .border(2.dp, if (selected) c.onBackground else c.surfaceContainer, RoundedCornerShape(radius.dp))
+            .border(2.dp, if (selected) Mono.palette.accent else c.surfaceContainer, RoundedCornerShape(radius.dp))
             .clickable(role = Role.RadioButton, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -183,11 +183,11 @@ fun WorkTag(modifier: Modifier = Modifier) {
 fun CountBadge(count: Int, modifier: Modifier = Modifier) {
     val c = MaterialTheme.colorScheme
     if (count > 1) {
-        Box(modifier.clip(CircleShape).background(c.onBackground).padding(horizontal = 8.dp, vertical = 3.dp)) {
-            Text("$count new", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = c.background)
+        Box(modifier.clip(CircleShape).background(Mono.palette.accent).padding(horizontal = 8.dp, vertical = 3.dp)) {
+            Text("$count new", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Mono.palette.onAccent)
         }
     } else {
-        Box(modifier.size(8.dp).clip(CircleShape).background(c.onBackground))
+        Box(modifier.size(8.dp).clip(CircleShape).background(Mono.palette.accent))
     }
 }
 

@@ -15,6 +15,9 @@ enum class RailStyle {
 /** NONE = text only; MINIMAL = single-colour glyphs (themed icons), grey fallback; MONOCHROME = greyscale; SYSTEM = full colour. */
 enum class IconStyle { NONE, MINIMAL, MONOCHROME, SYSTEM }
 enum class ThemeMode { SYSTEM, DARK, LIGHT, DYNAMIC }
+
+/** MONO = black & white with greyscale glyph icons; COLOUR = full-colour icons and an accent colour. */
+enum class ColorMode { MONO, COLOUR }
 enum class GestureAction { NONE, NOTIFICATION_SHADE, LOCK_SCREEN, SEARCH, OPEN_SETTINGS }
 
 data class Settings(
@@ -24,6 +27,9 @@ data class Settings(
     val iconStyle: IconStyle = IconStyle.MINIMAL,
     val fontScale: Float = 1f,
     val theme: ThemeMode = ThemeMode.SYSTEM,
+    val colorMode: ColorMode = ColorMode.MONO,
+    /** Id from FontChoices; "system" = the phone's own font. */
+    val fontId: String = "system",
     val swipeDown: GestureAction = GestureAction.NOTIFICATION_SHADE,
     val doubleTap: GestureAction = GestureAction.LOCK_SCREEN,
     val swipeRight: GestureAction = GestureAction.NONE,

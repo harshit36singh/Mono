@@ -68,6 +68,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.mono.launcher.BuildConfig
 import com.mono.launcher.accessibility.LockAccessibilityService
 import com.mono.launcher.data.AppEntry
+import com.mono.launcher.data.ColorMode
 import com.mono.launcher.data.GestureAction
 import com.mono.launcher.data.IconStyle
 import com.mono.launcher.data.RailSide
@@ -204,6 +205,15 @@ fun SettingsScreen(
                 Section("Layout") {
                     SettingGroup(contentPadding = 0) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
+                            Labeled("Style") {
+                                Segmented(
+                                    listOf(ColorMode.MONO, ColorMode.COLOUR),
+                                    settings.colorMode,
+                                    { if (it == ColorMode.MONO) "Mono" else "Colour" },
+                                    { v -> actions.update { it.copy(colorMode = v) } },
+                                )
+                            }
+                            Labeled("Font") { FontPicker(settings.fontId) { id -> actions.update { it.copy(fontId = id) } } }
                             Labeled("Alphabet behaviour") {
                                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     RailStyle.entries.forEach { style ->
@@ -223,6 +233,9 @@ fun SettingsScreen(
                                 }
                             }
                             Labeled("Icons") {
+                                if (settings.colorMode == ColorMode.COLOUR) {
+                                    Text("Colour style shows icons in full colour. These apply in Mono.", fontSize = 13.sp, color = c.onSurfaceVariant)
+                                }
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     listOf(IconStyle.NONE, IconStyle.MINIMAL, IconStyle.MONOCHROME, IconStyle.SYSTEM).forEach { style ->
                                         val on = style == settings.iconStyle
@@ -352,8 +365,8 @@ private fun StatusRow(title: String, subtitle: String, status: Status, onClick: 
             Text(subtitle, fontSize = 13.sp, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
         }
         when (status) {
-            Status.DONE -> LineIcon(Icons.Check, 18.dp, c.onBackground)
-            Status.ATTENTION -> Box(Modifier.size(8.dp).clip(CircleShape).background(c.onBackground))
+            Status.DONE -> LineIcon(Icons.Check, 18.dp, Mono.palette.accent)
+            Status.ATTENTION -> Box(Modifier.size(8.dp).clip(CircleShape).background(Mono.palette.accent))
             Status.ACTION -> LineIcon(Icons.ChevronRight, 18.dp, c.onSurfaceVariant)
         }
     }
@@ -465,6 +478,31 @@ private fun FontScaleItem(value: Float, onChange: (Float) -> Unit) {
                 modifier = Modifier.weight(1f).padding(horizontal = 14.dp).semantics { contentDescription = "Text size" },
             )
             Text("Aa", fontSize = 22.sp)
+        }
+    }
+}
+
+/** Horizontal row of font tiles, each previewing "Aa" in its own face. */
+@Composable
+private fun FontPicker(selectedId: String, onSelect: (String) -> Unit) {
+    val c = MaterialTheme.colorScheme
+    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(com.mono.launcher.ui.theme.FontChoices.all.size) { i ->
+            val f = com.mono.launcher.ui.theme.FontChoices.all[i]
+            val on = f.id == selectedId
+            val family = remember(f.id) { com.mono.launcher.ui.theme.FontChoices.family(f) }
+            Tile(on, { onSelect(f.id) }, Modifier.size(84.dp, 76.dp).semantics { contentDescription = f.name }, radius = 12) {
+                Text("Aa", fontSize = 24.sp, fontFamily = family, color = c.onBackground)
+                Text(
+                    f.name,
+                    fontSize = 11.sp,
+                    fontFamily = family,
+                    maxLines = 1,
+                    fontWeight = if (on) FontWeight.Medium else FontWeight.Normal,
+                    color = if (on) c.onBackground else c.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, start = 6.dp, end = 6.dp),
+                )
+            }
         }
     }
 }

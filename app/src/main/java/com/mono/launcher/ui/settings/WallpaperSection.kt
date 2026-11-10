@@ -1,5 +1,6 @@
 package com.mono.launcher.ui.settings
 
+import com.mono.launcher.ui.theme.Mono
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -77,7 +78,7 @@ fun WallpaperCarousel(selectedId: String?, onOpen: (Wallpaper) -> Unit) {
                     .size(96.dp, 172.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(c.surfaceContainer)
-                    .border(2.dp, if (on) c.onBackground else Color.Transparent, RoundedCornerShape(14.dp))
+                    .border(2.dp, if (on) Mono.palette.accent else Color.Transparent, RoundedCornerShape(14.dp))
                     .clickable(role = Role.Button, onClickLabel = "Preview") { onOpen(wp) }
                     .semantics {
                         contentDescription = wp.name
@@ -89,9 +90,9 @@ fun WallpaperCarousel(selectedId: String?, onOpen: (Wallpaper) -> Unit) {
                 }
                 if (on) {
                     Box(
-                        Modifier.align(Alignment.TopEnd).padding(8.dp).size(22.dp).clip(CircleShape).background(c.onBackground),
+                        Modifier.align(Alignment.TopEnd).padding(8.dp).size(22.dp).clip(CircleShape).background(Mono.palette.accent),
                         contentAlignment = Alignment.Center,
-                    ) { LineIcon(Icons.Check, 12.dp, c.background, strokeWidth = 3.5f) }
+                    ) { LineIcon(Icons.Check, 12.dp, Mono.palette.onAccent, strokeWidth = 3.5f) }
                 }
             }
         }

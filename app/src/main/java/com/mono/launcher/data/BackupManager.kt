@@ -29,6 +29,8 @@ class BackupManager @Inject constructor(
                     .put("iconStyle", s.iconStyle.name)
                     .put("fontScale", s.fontScale.toDouble())
                     .put("theme", s.theme.name)
+                    .put("colorMode", s.colorMode.name)
+                    .put("font", s.fontId)
                     .put("swipeDown", s.swipeDown.name)
                     .put("doubleTap", s.doubleTap.name)
                     .put("swipeRight", s.swipeRight.name)
@@ -67,6 +69,8 @@ class BackupManager @Inject constructor(
                         iconStyle = enumOr(o.optString("iconStyle"), s.iconStyle),
                         fontScale = o.optDouble("fontScale", s.fontScale.toDouble()).toFloat().coerceIn(0.8f, 1.4f),
                         theme = enumOr(o.optString("theme"), s.theme),
+                        colorMode = enumOr(o.optString("colorMode"), s.colorMode),
+                        fontId = o.optString("font", s.fontId),
                         swipeDown = enumOr(o.optString("swipeDown"), s.swipeDown),
                         doubleTap = enumOr(o.optString("doubleTap"), s.doubleTap),
                         swipeRight = enumOr(o.optString("swipeRight"), s.swipeRight),

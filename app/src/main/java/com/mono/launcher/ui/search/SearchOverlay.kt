@@ -1,5 +1,6 @@
 package com.mono.launcher.ui.search
 
+import com.mono.launcher.ui.theme.Mono
 import android.app.SearchManager
 import android.content.Intent
 import androidx.compose.foundation.background
@@ -185,7 +186,7 @@ private fun SearchField(query: String, onQuery: (String) -> Unit, onGo: () -> Un
                 value = query,
                 onValueChange = onQuery,
                 singleLine = true,
-                textStyle = TextStyle(fontSize = 18.sp, color = c.onBackground),
+                textStyle = androidx.compose.material3.LocalTextStyle.current.merge(TextStyle(fontSize = 18.sp, color = c.onBackground)),
                 cursorBrush = SolidColor(c.onBackground),
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Go,
@@ -223,7 +224,7 @@ private fun ResultRow(
             .fillMaxWidth()
             .heightIn(min = 52.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(if (best) c.onBackground.copy(alpha = 0.08f) else c.background.copy(alpha = 0f))
+            .background(if (best) Mono.palette.accent.copy(alpha = if (Mono.palette.colorful) 0.16f else 0.08f) else c.background.copy(alpha = 0f))
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -246,9 +247,9 @@ private fun ResultRow(
         }
         if (best) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Go", fontSize = 12.sp, color = c.onSurfaceVariant)
+                Text("Go", fontSize = 12.sp, color = if (Mono.palette.colorful) Mono.palette.accent else c.onSurfaceVariant)
                 Spacer(Modifier.width(4.dp))
-                LineIcon(Icons.ArrowRight, 14.dp, c.onSurfaceVariant)
+                LineIcon(Icons.ArrowRight, 14.dp, if (Mono.palette.colorful) Mono.palette.accent else c.onSurfaceVariant)
             }
         }
     }

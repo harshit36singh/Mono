@@ -170,7 +170,7 @@ private fun InfoRow(icon: LineIconSpec, lead: String, detail: String, fontScale:
             .padding(end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LineIcon(icon, 16.dp, c.onSurfaceVariant)
+        LineIcon(icon, 16.dp, if (Mono.palette.colorful) Mono.palette.accent else c.onSurfaceVariant)
         Spacer(Modifier.width(12.dp))
         Text(
             buildAnnotatedString {

@@ -1,5 +1,6 @@
 package com.mono.launcher.ui.home
 
+import com.mono.launcher.ui.theme.Mono
 import android.graphics.Rect
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -553,7 +554,7 @@ private fun RailLetter(
         FAVORITES_GROUP -> "Favorites"
         else -> "Apps starting with ${group.letter}"
     }
-    val color = MaterialTheme.colorScheme.onBackground
+    val color = if (active) Mono.palette.accent else MaterialTheme.colorScheme.onBackground
     val shadowColor = if (LocalIsDark.current) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
     Box(
         modifier
@@ -571,7 +572,7 @@ private fun RailLetter(
             textAlign = TextAlign.Center,
             color = color.copy(alpha = if (group.isEmpty) 0.28f else if (active) 1f else 0.85f),
             // Soft shadow keeps letters legible over bright wallpapers.
-            style = TextStyle(shadow = Shadow(color = shadowColor, blurRadius = 8f)),
+            style = androidx.compose.material3.LocalTextStyle.current.copy(shadow = Shadow(color = shadowColor, blurRadius = 8f)),
             modifier = Modifier.graphicsLayer {
                 if (style == RailStyle.WAVE) {
                     // Read in the draw phase only: dragging never recomposes the rail.
@@ -690,7 +691,7 @@ private fun AppListRow(
                 scaleY = s
                 transformOrigin = TransformOrigin(0f, 0.5f)
             }
-            .background(colors.onBackground.copy(alpha = 0.08f * lift), RoundedCornerShape(12.dp))
+            .background(Mono.palette.accent.copy(alpha = (if (Mono.palette.colorful) 0.16f else 0.08f) * lift), RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp)
             .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,

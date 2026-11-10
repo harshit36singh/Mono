@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
         })
         setContent {
             val state by vm.state.collectAsStateWithLifecycle()
-            MonoTheme(state.settings.theme) {
+            MonoTheme(state.settings.theme, state.settings.colorMode, state.settings.fontId) {
                 val dark = isDark(state.settings.theme)
                 LaunchedEffect(dark) {
                     val transparent = Color.Transparent.toArgb()

@@ -32,6 +32,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         val railStyle = stringPreferencesKey("rail_style")
         val fontScale = floatPreferencesKey("font_scale")
         val theme = stringPreferencesKey("theme")
+        val colorMode = stringPreferencesKey("color_mode")
+        val font = stringPreferencesKey("font")
         val swipeDown = stringPreferencesKey("gesture_swipe_down")
         val doubleTap = stringPreferencesKey("gesture_double_tap")
         val swipeRight = stringPreferencesKey("gesture_swipe_right")
@@ -62,6 +64,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             iconStyle = enumOr(this[K.iconStyle], d.iconStyle),
             fontScale = this[K.fontScale] ?: d.fontScale,
             theme = enumOr(this[K.theme], d.theme),
+            colorMode = enumOr(this[K.colorMode], d.colorMode),
+            fontId = this[K.font] ?: d.fontId,
             swipeDown = enumOr(this[K.swipeDown], d.swipeDown),
             doubleTap = enumOr(this[K.doubleTap], d.doubleTap),
             swipeRight = enumOr(this[K.swipeRight], d.swipeRight),
@@ -81,6 +85,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         this[K.iconStyle] = s.iconStyle.name
         this[K.fontScale] = s.fontScale
         this[K.theme] = s.theme.name
+        this[K.colorMode] = s.colorMode.name
+        this[K.font] = s.fontId
         this[K.swipeDown] = s.swipeDown.name
         this[K.doubleTap] = s.doubleTap.name
         this[K.swipeRight] = s.swipeRight.name
