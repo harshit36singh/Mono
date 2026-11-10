@@ -3,8 +3,16 @@ package com.mono.launcher.ui.settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,19 +21,21 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -35,8 +45,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,6 +73,16 @@ import com.mono.launcher.data.Settings
 import com.mono.launcher.data.ThemeMode
 import com.mono.launcher.notifications.MonoNotificationListener
 import com.mono.launcher.system.SystemActions
+import com.mono.launcher.ui.common.Icons
+import com.mono.launcher.ui.common.LineIcon
+import com.mono.launcher.ui.common.Mo
+import com.mono.launcher.ui.common.MoPose
+import com.mono.launcher.ui.common.MonoSwitch
+import com.mono.launcher.ui.common.SectionHeading
+import com.mono.launcher.ui.common.Segmented
+import com.mono.launcher.ui.common.SettingGroup
+import com.mono.launcher.ui.common.Tile
+import com.mono.launcher.ui.theme.Mono
 import java.time.LocalDate
 
 class SettingsActions(
@@ -63,6 +94,8 @@ class SettingsActions(
     val close: () -> Unit,
 )
 
+private enum class Status { DONE, ATTENTION, ACTION }
+
 @Composable
 fun SettingsScreen(
     settings: Settings,
@@ -71,6 +104,7 @@ fun SettingsScreen(
     actions: SettingsActions,
 ) {
     val context = LocalContext.current
+    val c = MaterialTheme.colorScheme
     var tick by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) {
         tick++
@@ -92,171 +126,275 @@ fun SettingsScreen(
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { actions.import(it, report("Import")) }
     }
-
     val labelFor = remember(allApps) { allApps.associate { it.packageName to it.displayLabel } }
 
     Column(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(c.background)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp, top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 28.dp, end = 20.dp, top = 24.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text("Settings", fontSize = 30.sp, fontWeight = FontWeight.Light, modifier = Modifier.weight(1f))
-            TextButton(onClick = actions.close) { Text("Done") }
+            Box(
+                Modifier
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .border(1.dp, c.outline, RoundedCornerShape(22.dp))
+                    .clickable(role = Role.Button, onClick = actions.close)
+                    .padding(horizontal = 18.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text("Done", fontSize = 15.sp) }
         }
-        LazyColumn(Modifier.fillMaxSize()) {
-            section("Setup")
-            item {
-                ActionItem("Default Home app", if (isDefault) "Mono is the default" else "Tap to set Mono as default") {
-                    val intent = SystemActions.requestHomeRoleIntent(context)
-                    if (intent != null) roleLauncher.launch(intent) else SystemActions.openHomeSettings(context)
-                }
-            }
-            item {
-                ActionItem("Notification access", if (notifGranted) "Granted — inline notifications and media card on" else "Off — tap to grant") {
-                    SystemActions.openNotificationAccessSettings(context)
-                }
-            }
-            item {
-                ActionItem("Double-tap to lock", if (a11yEnabled) "Accessibility service on" else "Needs Mono's accessibility service — tap to enable") {
-                    SystemActions.openAccessibilitySettings(context)
-                }
-            }
 
-            section("Layout")
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(28.dp),
+        ) {
             item {
-                ChoiceItem("Alphabet rail", RailSide.entries, settings.railSide, { if (it == RailSide.RIGHT) "Right edge" else "Left edge" }) { v ->
-                    actions.update { it.copy(railSide = v) }
-                }
-            }
-            item {
-                ChoiceItem("Alphabet behaviour", RailStyle.entries, settings.railStyle, {
-                    when (it) {
-                        RailStyle.WAVE -> "Wave — letters curve around your thumb"
-                        RailStyle.POPOUT -> "Popout — compact card beside your thumb"
-                        RailStyle.LIST -> "List — full A–Z list, rail jumps to letter"
+                Section("Setup") {
+                    SettingGroup {
+                        StatusRow("Default Home app", if (isDefault) "Mono is your Home" else "Tap to set Mono as default", if (isDefault) Status.DONE else Status.ACTION) {
+                            val intent = SystemActions.requestHomeRoleIntent(context)
+                            if (intent != null) roleLauncher.launch(intent) else SystemActions.openHomeSettings(context)
+                        }
+                        StatusRow(
+                            "Notification access",
+                            if (notifGranted) "Granted · inline notifications on" else "Not granted · tap to allow",
+                            if (notifGranted) Status.DONE else Status.ATTENTION,
+                        ) { SystemActions.openNotificationAccessSettings(context) }
+                        StatusRow(
+                            "Double-tap to lock",
+                            if (a11yEnabled) "Accessibility service on" else "Needs accessibility service",
+                            if (a11yEnabled) Status.DONE else Status.ACTION,
+                        ) { SystemActions.openAccessibilitySettings(context) }
                     }
-                }) { v -> actions.update { it.copy(railStyle = v) } }
-            }
-            item {
-                ChoiceItem("Icons", IconStyle.entries, settings.iconStyle, {
-                    when (it) {
-                        IconStyle.NONE -> "Text only"
-                        IconStyle.MINIMAL -> "Minimal — single-colour glyphs"
-                        IconStyle.MONOCHROME -> "Greyscale icons"
-                        IconStyle.SYSTEM -> "Full-colour icons"
-                    }
-                }) { v -> actions.update { it.copy(iconStyle = v) } }
-            }
-            item { FontScaleItem(settings.fontScale) { v -> actions.update { it.copy(fontScale = v) } } }
-            item {
-                ChoiceItem("Theme", ThemeMode.entries, settings.theme, {
-                    when (it) {
-                        ThemeMode.SYSTEM -> "Follow system"
-                        ThemeMode.DARK -> "Dark"
-                        ThemeMode.LIGHT -> "Light"
-                        ThemeMode.DYNAMIC -> "Material You colors"
-                    }
-                }) { v -> actions.update { it.copy(theme = v) } }
-            }
-            item {
-                SwitchItem("Media card", "Now playing controls on Home", settings.showMediaCard) { v -> actions.update { it.copy(showMediaCard = v) } }
-            }
-            item {
-                SwitchItem("Haptics", "Ticks on letters, reorder and launch", settings.haptics) { v -> actions.update { it.copy(haptics = v) } }
-            }
-
-            section("Gestures")
-            item { GestureItem("Swipe down", settings.swipeDown) { v -> actions.update { it.copy(swipeDown = v) } } }
-            item { GestureItem("Double-tap empty space", settings.doubleTap) { v -> actions.update { it.copy(doubleTap = v) } } }
-            item { GestureItem("Swipe right", settings.swipeRight) { v -> actions.update { it.copy(swipeRight = v) } } }
-
-            section("Hidden apps")
-            if (hidden.isEmpty()) {
-                item { Caption("No hidden apps. Long-press any app and choose Hide.") }
-            } else {
-                items(hidden, key = { "h/${it.packageName}/${it.activityName}/${it.userSerial}" }) { app ->
-                    ActionItem(app.displayLabel + if (app.isWorkProfile) " (work)" else "", "Tap to unhide") { actions.unhide(app) }
                 }
             }
 
-            section("Muted notifications")
-            if (settings.mutedPackages.isEmpty()) {
-                item { Caption("No muted apps. Long-press an app to mute its notifications on Home.") }
-            } else {
-                items(settings.mutedPackages.sorted(), key = { "m/$it" }) { pkg ->
-                    ActionItem(labelFor[pkg] ?: pkg, "Tap to unmute") { actions.toggleMute(pkg) }
+            item {
+                Section("Layout") {
+                    SettingGroup(contentPadding = 0) {
+                        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
+                            Labeled("Alphabet behaviour") {
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    RailStyle.entries.forEach { style ->
+                                        val on = style == settings.railStyle
+                                        Tile(on, { actions.update { it.copy(railStyle = style) } }, Modifier.weight(1f).semantics { stateDescription = if (on) "Selected" else "" }) {
+                                            Spacer(Modifier.height(10.dp))
+                                            RailPreview(style)
+                                            Text(
+                                                railStyleName(style),
+                                                fontSize = 13.sp,
+                                                fontWeight = if (on) FontWeight.Medium else FontWeight.Normal,
+                                                color = if (on) c.onBackground else c.onSurfaceVariant,
+                                                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            Labeled("Icons") {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf(IconStyle.NONE, IconStyle.MINIMAL, IconStyle.MONOCHROME, IconStyle.SYSTEM).forEach { style ->
+                                        val on = style == settings.iconStyle
+                                        Tile(on, { actions.update { it.copy(iconStyle = style) } }, Modifier.weight(1f).height(64.dp), radius = 12) {
+                                            IconStylePreview(style)
+                                            Spacer(Modifier.height(6.dp))
+                                            Text(
+                                                iconStyleName(style),
+                                                fontSize = 12.sp,
+                                                fontWeight = if (on) FontWeight.Medium else FontWeight.Normal,
+                                                color = if (on) c.onBackground else c.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            FontScaleItem(settings.fontScale) { v -> actions.update { it.copy(fontScale = v) } }
+                            Labeled("Theme") {
+                                Segmented(
+                                    listOf(ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.SYSTEM, ThemeMode.DYNAMIC),
+                                    settings.theme,
+                                    { when (it) { ThemeMode.LIGHT -> "Light"; ThemeMode.DARK -> "Dark"; ThemeMode.SYSTEM -> "System"; ThemeMode.DYNAMIC -> "You" } },
+                                    { v -> actions.update { it.copy(theme = v) } },
+                                )
+                            }
+                            Labeled("Alphabet rail") {
+                                Segmented(
+                                    listOf(RailSide.LEFT, RailSide.RIGHT),
+                                    settings.railSide,
+                                    { if (it == RailSide.LEFT) "Left edge" else "Right edge" },
+                                    { v -> actions.update { it.copy(railSide = v) } },
+                                )
+                            }
+                            Column {
+                                SwitchRow("Media card", settings.showMediaCard) { v -> actions.update { it.copy(showMediaCard = v) } }
+                                SwitchRow("Haptics", settings.haptics) { v -> actions.update { it.copy(haptics = v) } }
+                            }
+                        }
+                    }
                 }
             }
 
-            section("Backup")
-            item { ActionItem("Export settings", "Save favorites, names and settings to a JSON file") { exporter.launch("mono-backup-${LocalDate.now()}.json") } }
-            item { ActionItem("Import settings", "Restore from a Mono JSON file") { importer.launch(arrayOf("application/json", "text/plain", "*/*")) } }
+            item {
+                Section("Gestures") {
+                    SettingGroup {
+                        GestureRow("Swipe down", settings.swipeDown) { v -> actions.update { it.copy(swipeDown = v) } }
+                        GestureRow("Double-tap", settings.doubleTap) { v -> actions.update { it.copy(doubleTap = v) } }
+                        GestureRow("Swipe right", settings.swipeRight) { v -> actions.update { it.copy(swipeRight = v) } }
+                    }
+                }
+            }
 
-            section("About")
-            item { Caption("Mono ${BuildConfig.VERSION_NAME}\nAll data stays on this device. No account, no ads, no tracking.") }
-            item { Spacer(Modifier.height(32.dp)) }
+            item {
+                Section("Apps & data") {
+                    SettingGroup {
+                        ExpandableRow("Hidden apps", hidden.size, "No hidden apps. Long-press any app and choose Hide.") {
+                            hidden.forEach { app ->
+                                SubRow(app.displayLabel + if (app.isWorkProfile) " (work)" else "", "Unhide") { actions.unhide(app) }
+                            }
+                        }
+                        ExpandableRow("Muted notifications", settings.mutedPackages.size, "No muted apps. Long-press an app to mute it on Home.") {
+                            settings.mutedPackages.sorted().forEach { pkg ->
+                                SubRow(labelFor[pkg] ?: pkg, "Unmute") { actions.toggleMute(pkg) }
+                            }
+                        }
+                        ValueRow("Export settings") { exporter.launch("mono-backup-${LocalDate.now()}.json") }
+                        ValueRow("Import settings") { importer.launch(arrayOf("application/json", "text/plain", "*/*")) }
+                    }
+                }
+            }
+
+            item {
+                Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Mo(MoPose.OUTLINE, 40.dp, body = Mono.palette.tertiaryText)
+                    Text(
+                        "Mono ${BuildConfig.VERSION_NAME} · All data stays on this device.\nNo account, no ads, no tracking.",
+                        fontSize = 13.sp,
+                        color = Mono.palette.tertiaryText,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                }
+            }
         }
     }
 }
 
-private fun LazyListScope.section(title: String) {
-    item(key = "section/$title") {
-        Text(
-            title.uppercase(),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 4.dp),
-        )
+@Composable
+private fun Section(title: String, content: @Composable () -> Unit) {
+    Column {
+        SectionHeading(title, Modifier.padding(start = 8.dp, end = 8.dp, bottom = 6.dp))
+        content()
     }
 }
 
 @Composable
-private fun Caption(text: String) {
-    Text(text, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-}
-
-@Composable
-private fun ActionItem(title: String, subtitle: String? = null, onClick: () -> Unit) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-    ) {
-        Text(title, fontSize = 17.sp, color = MaterialTheme.colorScheme.onBackground)
-        if (subtitle != null) Text(subtitle, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun Labeled(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(title, fontSize = 16.sp)
+        content()
     }
 }
 
 @Composable
-private fun SwitchItem(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun StatusRow(title: String, subtitle: String, status: Status, onClick: () -> Unit) {
+    val c = MaterialTheme.colorScheme
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(role = Role.Switch) { onChange(!checked) }
-            .padding(horizontal = 24.dp, vertical = 10.dp),
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 17.sp, color = MaterialTheme.colorScheme.onBackground)
-            Text(subtitle, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(title, fontSize = 16.sp)
+            Text(subtitle, fontSize = 13.sp, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
         }
-        Switch(checked = checked, onCheckedChange = null)
+        when (status) {
+            Status.DONE -> LineIcon(Icons.Check, 18.dp, c.onBackground)
+            Status.ATTENTION -> Box(Modifier.size(8.dp).clip(CircleShape).background(c.onBackground))
+            Status.ACTION -> LineIcon(Icons.ChevronRight, 18.dp, c.onSurfaceVariant)
+        }
     }
 }
 
 @Composable
-private fun <T> ChoiceItem(title: String, options: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit) {
+private fun ValueRow(title: String, value: String? = null, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, fontSize = 16.sp, modifier = Modifier.weight(1f))
+        if (value != null) Text(value, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun ExpandableRow(title: String, count: Int, emptyText: String, content: @Composable () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Column {
+        ValueRow(title, "$count") { open = !open }
+        AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+            Column(Modifier.padding(bottom = 6.dp)) {
+                if (count == 0) {
+                    Text(emptyText, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
+                } else {
+                    content()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubRow(title: String, action: String, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clickable(role = Role.Button, onClickLabel = action, onClick = onClick)
+            .padding(start = 30.dp, end = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+        Text(action, fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground)
+    }
+}
+
+@Composable
+private fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clickable(role = Role.Switch) { onChange(!checked) }
+            .semantics { stateDescription = if (checked) "On" else "Off" },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, fontSize = 16.sp, modifier = Modifier.weight(1f))
+        MonoSwitch(checked)
+    }
+}
+
+@Composable
+private fun GestureRow(title: String, selected: GestureAction, onSelect: (GestureAction) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        ActionItem(title, label(selected)) { open = true }
+        ValueRow(title, gestureName(selected)) { open = true }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            options.forEach { o ->
+            GestureAction.entries.forEach { o ->
                 DropdownMenuItem(
-                    text = { Text(label(o) + if (o == selected) "  ✓" else "") },
+                    text = { Text(gestureName(o), fontWeight = if (o == selected) FontWeight.Medium else FontWeight.Normal) },
+                    trailingIcon = if (o == selected) ({ LineIcon(Icons.Check, 16.dp, MaterialTheme.colorScheme.onSurface) }) else null,
                     onClick = { onSelect(o); open = false },
                 )
             }
@@ -265,29 +403,109 @@ private fun <T> ChoiceItem(title: String, options: List<T>, selected: T, label: 
 }
 
 @Composable
-private fun GestureItem(title: String, selected: GestureAction, onSelect: (GestureAction) -> Unit) =
-    ChoiceItem(title, GestureAction.entries, selected, {
-        when (it) {
-            GestureAction.NONE -> "Do nothing"
-            GestureAction.NOTIFICATION_SHADE -> "Open notification shade"
-            GestureAction.LOCK_SCREEN -> "Lock screen"
-            GestureAction.SEARCH -> "Search"
-            GestureAction.OPEN_SETTINGS -> "Mono settings"
+private fun FontScaleItem(value: Float, onChange: (Float) -> Unit) {
+    val c = MaterialTheme.colorScheme
+    var local by remember(value) { mutableFloatStateOf(value) }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Text("Text size", fontSize = 16.sp, modifier = Modifier.weight(1f))
+            Text("${(local * 100).toInt()}%", fontSize = 13.sp, color = c.onSurfaceVariant)
         }
-    }, onSelect)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Aa", fontSize = 13.sp, color = c.onSurfaceVariant)
+            Slider(
+                value = local,
+                onValueChange = { local = it },
+                onValueChangeFinished = { onChange(local) },
+                valueRange = 0.8f..1.4f,
+                steps = 5,
+                colors = SliderDefaults.colors(
+                    thumbColor = c.onBackground,
+                    activeTrackColor = c.onBackground,
+                    inactiveTrackColor = Mono.palette.track,
+                    activeTickColor = c.onBackground.copy(alpha = 0f),
+                    inactiveTickColor = c.onBackground.copy(alpha = 0f),
+                ),
+                modifier = Modifier.weight(1f).padding(horizontal = 14.dp).semantics { contentDescription = "Text size" },
+            )
+            Text("Aa", fontSize = 22.sp)
+        }
+    }
+}
+
+// --- Previews drawn from the design's mini illustrations (72×90 grid) ------------------------
 
 @Composable
-private fun FontScaleItem(value: Float, onChange: (Float) -> Unit) {
-    var local by remember(value) { mutableFloatStateOf(value) }
-    Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-        Text("Text size", fontSize = 17.sp, color = MaterialTheme.colorScheme.onBackground)
-        Text("Aa  ${(local * 100).toInt()}%", fontSize = (14 * local).sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Slider(
-            value = local,
-            onValueChange = { local = it },
-            onValueChangeFinished = { onChange(local) },
-            valueRange = 0.8f..1.4f,
-            steps = 5,
-        )
+private fun RailPreview(style: RailStyle) {
+    val c = MaterialTheme.colorScheme
+    val p = Mono.palette
+    val fg = c.onBackground
+    val dim = c.outline
+    val mid = c.onSurfaceVariant
+    val track = p.track
+    val tertiary = p.tertiaryText
+    Canvas(Modifier.size(72.dp, 90.dp)) {
+        scale(size.width / 72f, pivot = Offset.Zero) {
+            when (style) {
+                RailStyle.WAVE -> {
+                    bar(6f, 30f, 30f, 5f, dim)
+                    bar(6f, 41f, 34f, 9f, track)
+                    bar(9f, 43.5f, 22f, 4f, fg)
+                    bar(6f, 56f, 26f, 5f, dim)
+                    listOf(64f to 8f, 63f to 18f, 59f to 28f, 52f to 38f, 52f to 54f, 59f to 64f, 63f to 74f, 64f to 84f)
+                        .forEachIndexed { i, (x, y) -> drawCircle(mid, radius = listOf(1.6f, 1.6f, 1.8f, 2.2f, 2.2f, 1.8f, 1.6f, 1.6f)[i], center = Offset(x, y)) }
+                    drawCircle(fg, 2.6f, Offset(49f, 46f))
+                }
+                RailStyle.POPOUT -> {
+                    bar(4f, 28f, 44f, 36f, track, 8f)
+                    bar(10f, 36f, 26f, 4f, fg)
+                    bar(10f, 45f, 30f, 4f, tertiary)
+                    bar(10f, 54f, 22f, 4f, tertiary)
+                    listOf(8f, 18f, 28f, 38f, 54f, 64f, 74f, 84f).forEach { drawCircle(mid, 1.6f, Offset(64f, it)) }
+                    drawCircle(fg, 4f, Offset(58f, 46f))
+                }
+                RailStyle.LIST -> {
+                    listOf(6f, 38f, 79f).forEach { bar(6f, it, 8f, 4f, mid) }
+                    listOf(16f to 36f, 25f to 30f, 48f to 40f, 57f to 28f, 66f to 34f).forEach { (y, w) -> bar(6f, y, w, 4f, dim) }
+                    listOf(10f, 22f, 34f, 58f, 70f, 82f).forEach { drawCircle(mid, 1.6f, Offset(64f, it)) }
+                    drawCircle(fg, 2.6f, Offset(64f, 46f))
+                }
+            }
+        }
     }
+}
+
+private fun DrawScope.bar(x: Float, y: Float, w: Float, h: Float, color: Color, r: Float = h / 2f) =
+    drawRoundRect(color, Offset(x, y), Size(w, h), CornerRadius(r, r))
+
+@Composable
+private fun IconStylePreview(style: IconStyle) {
+    val c = MaterialTheme.colorScheme
+    when (style) {
+        IconStyle.NONE -> Text("Aa", fontSize = 15.sp, color = c.onBackground)
+        IconStyle.MINIMAL -> LineIcon(Icons.Chat, 20.dp, c.onBackground, strokeWidth = 1.8f)
+        IconStyle.MONOCHROME -> Box(Modifier.size(20.dp).clip(RoundedCornerShape(6.dp)).background(Brush.linearGradient(listOf(Color(0xFF9A9A9A), Color(0xFF5E5E5E)))))
+        IconStyle.SYSTEM -> Box(Modifier.size(20.dp).clip(RoundedCornerShape(6.dp)).background(Brush.linearGradient(listOf(Color(0xFF5AA9E6), Color(0xFFE58B4A)))))
+    }
+}
+
+private fun railStyleName(s: RailStyle) = when (s) {
+    RailStyle.WAVE -> "Wave"
+    RailStyle.POPOUT -> "Popout"
+    RailStyle.LIST -> "List"
+}
+
+private fun iconStyleName(s: IconStyle) = when (s) {
+    IconStyle.NONE -> "Text"
+    IconStyle.MINIMAL -> "Minimal"
+    IconStyle.MONOCHROME -> "Grey"
+    IconStyle.SYSTEM -> "Colour"
+}
+
+private fun gestureName(g: GestureAction) = when (g) {
+    GestureAction.NONE -> "Do nothing"
+    GestureAction.NOTIFICATION_SHADE -> "Notification shade"
+    GestureAction.LOCK_SCREEN -> "Lock screen"
+    GestureAction.SEARCH -> "Search"
+    GestureAction.OPEN_SETTINGS -> "Mono settings"
 }
