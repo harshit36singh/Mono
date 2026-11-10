@@ -38,8 +38,10 @@ fun AppIcon(app: AppEntry, iconStyle: IconStyle, size: Dp, modifier: Modifier = 
     val cache = LocalIconCache.current
     val px = with(LocalDensity.current) { size.roundToPx() }
     val minimal = style == IconStyle.MINIMAL
+    // produceState keeps its value across key changes, so always resolve for the current style;
+    // otherwise switching Mono -> Colour would keep showing the old glyph.
     val icon: LoadedIcon? by produceState(cache.peek(app.key, minimal, px), app.key, px, minimal) {
-        if (value == null) value = cache.load(app, px, minimal)
+        value = cache.peek(app.key, minimal, px) ?: cache.load(app, px, minimal)
     }
     val tint = MaterialTheme.colorScheme.onBackground
     val glyphFilter = remember(tint) { ColorFilter.tint(tint, BlendMode.SrcIn) }

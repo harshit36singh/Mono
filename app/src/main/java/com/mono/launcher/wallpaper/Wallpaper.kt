@@ -57,11 +57,9 @@ private val bitmapCache = object : LruCache<Int, ImageBitmap>(24 * 1024) {
 fun rememberResourceBitmap(@DrawableRes res: Int): ImageBitmap? {
     val context = LocalContext.current
     val bitmap by produceState(bitmapCache.get(res), res) {
-        if (value == null) {
-            value = withContext(Dispatchers.IO) {
-                runCatching { BitmapFactory.decodeResource(context.resources, res).asImageBitmap() }.getOrNull()
-            }?.also { bitmapCache.put(res, it) }
-        }
+        value = bitmapCache.get(res) ?: withContext(Dispatchers.IO) {
+            runCatching { BitmapFactory.decodeResource(context.resources, res).asImageBitmap() }.getOrNull()
+        }?.also { bitmapCache.put(res, it) }
     }
     return bitmap
 }
