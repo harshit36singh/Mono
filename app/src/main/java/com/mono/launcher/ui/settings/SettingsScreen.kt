@@ -98,6 +98,12 @@ class SettingsActions(
     val export: (android.net.Uri, (Result<Unit>) -> Unit) -> Unit,
     val import: (android.net.Uri, (Result<Unit>) -> Unit) -> Unit,
     val applyWallpaper: (Wallpaper, WallpaperTarget, (Result<Unit>) -> Unit) -> Unit,
+    val toggleFocusApp: (String) -> Unit,
+    val toggleDistracting: (String) -> Unit,
+    val startFocus: (Int) -> Unit,
+    val endFocus: () -> Unit,
+    val pickWidget: (android.appwidget.AppWidgetProviderInfo) -> Unit,
+    val removeWidget: () -> Unit,
     val close: () -> Unit,
 )
 
@@ -108,6 +114,7 @@ fun SettingsScreen(
     settings: Settings,
     hidden: List<AppEntry>,
     allApps: List<AppEntry>,
+    focus: com.mono.launcher.data.FocusState,
     actions: SettingsActions,
 ) {
     val context = LocalContext.current
@@ -143,6 +150,7 @@ fun SettingsScreen(
         else Toast.makeText(context, "Calendar access is needed to show events", Toast.LENGTH_SHORT).show()
     }
     var previewing by remember { mutableStateOf<Wallpaper?>(null) }
+    var pickingWidget by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
     Column(
@@ -285,6 +293,10 @@ fun SettingsScreen(
                 }
             }
 
+            item { WidgetSettings(settings, actions) { pickingWidget = true } }
+            item { FocusSettings(settings, focus, allApps, actions) }
+            item { PauseSettings(settings, allApps, actions) }
+
             item {
                 Section("Gestures") {
                     SettingGroup {
@@ -328,6 +340,9 @@ fun SettingsScreen(
         }
     }
 
+    if (pickingWidget) {
+        WidgetPicker(onPick = actions.pickWidget, onClose = { pickingWidget = false })
+    }
     previewing?.let { wp ->
         WallpaperPreview(wp, settings.fontScale, actions.applyWallpaper) { previewing = null }
     }
@@ -335,7 +350,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
+internal fun Section(title: String, content: @Composable () -> Unit) {
     Column {
         SectionHeading(title, Modifier.padding(start = 8.dp, end = 8.dp, bottom = 6.dp))
         content()
@@ -343,7 +358,7 @@ private fun Section(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Labeled(title: String, content: @Composable () -> Unit) {
+internal fun Labeled(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(title, fontSize = 16.sp)
         content()
@@ -373,7 +388,7 @@ private fun StatusRow(title: String, subtitle: String, status: Status, onClick: 
 }
 
 @Composable
-private fun ValueRow(title: String, value: String? = null, onClick: () -> Unit) {
+internal fun ValueRow(title: String, value: String? = null, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -388,7 +403,7 @@ private fun ValueRow(title: String, value: String? = null, onClick: () -> Unit) 
 }
 
 @Composable
-private fun ExpandableRow(title: String, count: Int, emptyText: String, content: @Composable () -> Unit) {
+internal fun ExpandableRow(title: String, count: Int, emptyText: String, content: @Composable () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Column {
         ValueRow(title, "$count") { open = !open }
@@ -405,7 +420,7 @@ private fun ExpandableRow(title: String, count: Int, emptyText: String, content:
 }
 
 @Composable
-private fun SubRow(title: String, action: String, onClick: () -> Unit) {
+internal fun SubRow(title: String, action: String, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -420,7 +435,7 @@ private fun SubRow(title: String, action: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+internal fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()

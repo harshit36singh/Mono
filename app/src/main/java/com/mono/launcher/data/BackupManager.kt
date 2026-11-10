@@ -37,7 +37,14 @@ class BackupManager @Inject constructor(
                     .put("mutedPackages", JSONArray(s.mutedPackages.toList()))
                     .put("showMediaCard", s.showMediaCard)
                     .put("haptics", s.haptics)
-                    .put("infoWidget", s.infoWidget))
+                    .put("infoWidget", s.infoWidget)
+                    .put("focusApps", JSONArray(s.focusApps.toList()))
+                    .put("focusEnabled", s.focusSchedule.enabled)
+                    .put("focusStart", s.focusSchedule.start)
+                    .put("focusEnd", s.focusSchedule.end)
+                    .put("focusDays", JSONArray(s.focusSchedule.days.toList()))
+                    .put("distractingApps", JSONArray(s.distractingApps.toList()))
+                    .put("nudgeSeconds", s.nudgeSeconds))
                 .put("apps", JSONArray().apply {
                     apps.allEntries()
                         .filter { it.isFavorite || it.isHidden || it.customLabel != null }
@@ -80,6 +87,16 @@ class BackupManager @Inject constructor(
                         showMediaCard = o.optBoolean("showMediaCard", s.showMediaCard),
                         haptics = o.optBoolean("haptics", s.haptics),
                         infoWidget = o.optBoolean("infoWidget", s.infoWidget),
+                        focusApps = o.optJSONArray("focusApps")?.strings()?.toSet() ?: s.focusApps,
+                        focusSchedule = s.focusSchedule.copy(
+                            enabled = o.optBoolean("focusEnabled", s.focusSchedule.enabled),
+                            start = o.optInt("focusStart", s.focusSchedule.start).coerceIn(0, 1439),
+                            end = o.optInt("focusEnd", s.focusSchedule.end).coerceIn(0, 1439),
+                            days = o.optJSONArray("focusDays")?.strings()?.mapNotNull { it.toIntOrNull() }?.filter { it in 1..7 }?.toSet()
+                                ?: s.focusSchedule.days,
+                        ),
+                        distractingApps = o.optJSONArray("distractingApps")?.strings()?.toSet() ?: s.distractingApps,
+                        nudgeSeconds = o.optInt("nudgeSeconds", s.nudgeSeconds).coerceIn(1, 30),
                     )
                 }
             }
@@ -106,6 +123,8 @@ class BackupManager @Inject constructor(
             apps.setFavorites(updated.filter { it.isFavorite }.sortedBy { it.favoriteOrder }.map { it.key })
         }
     }
+
+    private fun JSONArray.strings(): List<String> = (0 until length()).map { get(it).toString() }
 
     private inline fun <reified E : Enum<E>> enumOr(raw: String?, default: E): E =
         raw?.let { runCatching { enumValueOf<E>(it) }.getOrNull() } ?: default

@@ -238,6 +238,8 @@ class HomeViewModel @Inject constructor(
         s.copy(focusApps = if (packageName in s.focusApps) s.focusApps - packageName else s.focusApps + packageName)
     }
 
+    fun setWidget(id: Int) = updateSettings { it.copy(widgetId = id) }
+
     fun startFocus(minutes: Int) = updateSettings { it.copy(focusUntil = System.currentTimeMillis() + minutes * 60_000L) }
 
     /** Ends manual focus now. A running schedule can only be paused by switching it off. */

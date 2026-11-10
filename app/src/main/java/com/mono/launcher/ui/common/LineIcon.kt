@@ -85,6 +85,23 @@ object Icons {
     val Trash = LineIconSpec("M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13")
     val Plus = LineIconSpec("M12 5v14M5 12h14", strokeWidth = 1.8f)
     val Shortcut = LineIconSpec("M7 17L17 7M9 7h8v8", strokeWidth = 1.8f)
+    val Flashlight = LineIconSpec("M8 3h8l-1 5H9z", "M9 8h6v3.5l-1 9.5h-4l-1-9.5z", "M12 13v3")
+    val Speaker = LineIconSpec("M5 9h3l4-4v14l-4-4H5z", "M16 9a4 4 0 0 1 0 6", "M18.5 6.5a7.5 7.5 0 0 1 0 11")
+    val Vibrate = LineIconSpec("M9 4h6a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z", "M4.5 9v6M19.5 9v6")
+    val Mute = LineIconSpec("M5 9h3l4-4v14l-4-4H5z", "M16 9.5l5 5M21 9.5l-5 5")
+    val Moon = LineIconSpec("M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10z")
+    val Target = LineIconSpec(circle(12f, 12f, 8f), circle(12f, 12f, 3.5f))
+    val Wifi = LineIconSpec("M3 9.5a13 13 0 0 1 18 0", "M6 13a8.5 8.5 0 0 1 12 0", "M9 16.5a4 4 0 0 1 6 0", "M12 19.8h.01", strokeWidth = 1.8f)
+    val Data = LineIconSpec("M8 20V5M4.5 8.5L8 5l3.5 3.5", "M16 4v15M12.5 15.5L16 19l3.5-3.5")
+    val Bluetooth = LineIconSpec("M7 7.5l10 9-5 4.5V3l5 4.5-10 9")
+    val Sun = LineIconSpec(circle(12f, 12f, 4f), "M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4")
+    val Sliders = LineIconSpec("M4 7h9M17 7h3M4 17h3M11 17h9", circle(15f, 7f, 2f), circle(9f, 17f, 2f))
+    val Widget = LineIconSpec(
+        "M5 4h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z",
+        "M14 4h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z",
+        "M5 13h14a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1z",
+    )
+    val Hourglass = LineIconSpec("M7 3h10M7 21h10", "M8 3c0 5 8 5 8 9s-8 4-8 9", "M16 3c0 5-8 5-8 9s8 4 8 9")
     val Alarm = LineIconSpec(circle(12f, 13f, 7f), "M12 9.5v3.5l2 2", "M5 4.5L3 6.5M19 4.5l2 2", strokeWidth = 1.7f)
     val Calendar = LineIconSpec(
         "M6 5.5h12a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z",

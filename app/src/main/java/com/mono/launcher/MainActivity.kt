@@ -32,7 +32,9 @@ import com.mono.launcher.ui.Overlay
 import com.mono.launcher.ui.common.LocalIconCache
 import com.mono.launcher.ui.home.HomeActions
 import com.mono.launcher.ui.home.HomeScreen
+import com.mono.launcher.ui.focus.NudgeScreen
 import com.mono.launcher.ui.onboarding.OnboardingScreen
+import com.mono.launcher.ui.panel.MonoPanel
 import com.mono.launcher.ui.search.SearchOverlay
 import com.mono.launcher.ui.settings.SettingsActions
 import com.mono.launcher.ui.settings.SettingsScreen
@@ -40,6 +42,10 @@ import com.mono.launcher.ui.sheets.AppActionsSheet
 import com.mono.launcher.ui.sheets.AppSheetActions
 import com.mono.launcher.ui.sheets.RenameDialog
 import com.mono.launcher.ui.theme.MonoTheme
+import com.mono.launcher.widget.LocalWidgetHost
+import com.mono.launcher.widget.WidgetFlow
+import com.mono.launcher.widget.WidgetHostManager
+import androidx.compose.runtime.mutableStateOf
 import com.mono.launcher.ui.theme.isDark
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -47,10 +53,13 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var iconCache: IconCache
+    @Inject lateinit var widgetHosts: WidgetHostManager
     private val vm: HomeViewModel by viewModels()
+    private lateinit var widgets: WidgetFlow
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        widgets = WidgetFlow(this, widgetHosts, currentId = { vm.state.value.settings.widgetId }, save = vm::setWidget)
         // A launcher never finishes on Back; Back only closes whatever is open.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = vm.closeOverlay()
@@ -64,8 +73,8 @@ class MainActivity : ComponentActivity() {
                     val style = if (dark) SystemBarStyle.dark(transparent) else SystemBarStyle.light(transparent, transparent)
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
                 }
-                CompositionLocalProvider(LocalIconCache provides iconCache) {
-                    MonoRoot(vm)
+                CompositionLocalProvider(LocalIconCache provides iconCache, LocalWidgetHost provides widgetHosts) {
+                    MonoRoot(vm, widgets)
                 }
             }
         }
@@ -76,9 +85,23 @@ class MainActivity : ComponentActivity() {
         if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_HOME)) vm.onHomePressed()
     }
 
+    override fun onStart() {
+        super.onStart()
+        widgetHosts.startListening()
+    }
+
     override fun onStop() {
         super.onStop()
+        widgetHosts.stopListening()
         vm.onStop()
+    }
+
+    @Deprecated("AppWidgetHost's configure flow still reports through onActivityResult")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!widgets.onActivityResult(requestCode, resultCode)) {
+            @Suppress("DEPRECATION")
+            super.onActivityResult(requestCode, resultCode, data)
+        }
     }
 
     override fun onTrimMemory(level: Int) {
@@ -88,7 +111,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun MonoRoot(vm: HomeViewModel) {
+private fun MonoRoot(vm: HomeViewModel, widgets: WidgetFlow) {
     val state by vm.state.collectAsStateWithLifecycle()
     val overlay by vm.overlay.collectAsStateWithLifecycle()
     val query by vm.query.collectAsStateWithLifecycle()
@@ -148,7 +171,8 @@ private fun MonoRoot(vm: HomeViewModel) {
             SettingsScreen(
                 settings = state.settings,
                 hidden = state.apps.hidden,
-                allApps = state.apps.visible + state.apps.hidden,
+                allApps = state.apps.all,
+                focus = state.focus,
                 actions = SettingsActions(
                     update = { vm.updateSettings(it) },
                     unhide = { vm.setHidden(it, false) },
@@ -156,9 +180,44 @@ private fun MonoRoot(vm: HomeViewModel) {
                     export = { uri, done -> vm.exportBackup(uri, done) },
                     import = { uri, done -> vm.importBackup(uri, done) },
                     applyWallpaper = { wp, target, done -> vm.applyWallpaper(wp, target, done) },
+                    toggleFocusApp = vm::toggleFocusApp,
+                    toggleDistracting = vm::toggleDistracting,
+                    startFocus = { vm.startFocus(it) },
+                    endFocus = vm::endFocus,
+                    pickWidget = { widgets.pick(it) },
+                    removeWidget = { widgets.remove() },
                     close = vm::closeOverlay,
                 ),
             )
+        }
+
+        AnimatedVisibility(
+            visible = overlay == Overlay.Panel,
+            enter = fadeIn(tween(160)) + slideInVertically(tween(220)) { -it / 3 },
+            exit = fadeOut(tween(140)) + slideOutVertically(tween(160)) { -it / 3 },
+        ) {
+            MonoPanel(
+                focus = state.focus,
+                haptics = state.settings.haptics,
+                onStartFocus = { vm.startFocus(60) },
+                onEndFocus = vm::endFocus,
+                onOpenSettings = { vm.show(Overlay.Settings) },
+                onClose = vm::closeOverlay,
+            )
+        }
+
+        val nudge = overlay as? Overlay.Nudge
+        AnimatedVisibility(visible = nudge != null, enter = fadeIn(tween(180)), exit = fadeOut(tween(140))) {
+            val last = remember { mutableStateOf<Overlay.Nudge?>(null) }
+            if (nudge != null) last.value = nudge
+            last.value?.let { n ->
+                NudgeScreen(
+                    app = n.app,
+                    seconds = state.settings.nudgeSeconds,
+                    onOpen = { vm.launchNow(n.app, n.bounds, n.options) },
+                    onCancel = vm::closeOverlay,
+                )
+            }
         }
     }
 
@@ -170,6 +229,8 @@ private fun MonoRoot(vm: HomeViewModel) {
                 app = app,
                 favoritesCount = state.apps.favorites.size,
                 muted = app.packageName in state.settings.mutedPackages,
+                distracting = app.packageName in state.settings.distractingApps,
+                focusHidden = app.packageName in state.settings.focusApps,
                 iconStyle = state.settings.iconStyle,
                 actions = AppSheetActions(
                     loadShortcuts = vm::shortcuts,
@@ -180,6 +241,8 @@ private fun MonoRoot(vm: HomeViewModel) {
                     rename = { vm.show(Overlay.Rename(it)) },
                     setHidden = { a, h -> vm.setHidden(a, h) },
                     toggleMute = vm::toggleMute,
+                    toggleDistracting = vm::toggleDistracting,
+                    toggleFocusApp = vm::toggleFocusApp,
                     appInfo = vm::openAppInfo,
                     uninstall = vm::uninstall,
                     dismiss = vm::closeOverlay,

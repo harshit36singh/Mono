@@ -67,6 +67,7 @@ import com.mono.launcher.ui.common.Mo
 import com.mono.launcher.ui.common.MoPose
 import com.mono.launcher.ui.common.rememberHaptics
 import com.mono.launcher.ui.common.rowGestures
+import com.mono.launcher.widget.WidgetSlot
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
 import com.mono.launcher.ui.theme.LocalIsDark
@@ -172,6 +173,7 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
                 if (settings.infoWidget) {
                     InfoWidget(settings.calendarOnHome, settings.fontScale, Modifier.padding(top = 20.dp))
                 }
+                if (state.focus.active) FocusHint(state.focus, Modifier.padding(top = if (settings.infoWidget) 6.dp else 20.dp))
             }
             // Top third stays empty by design: everything interactive sits within thumb reach.
             Spacer(Modifier.weight(1f))
@@ -181,10 +183,12 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
                     .graphicsLayer { alpha = if (settings.railStyle == RailStyle.WAVE) homeAlpha else 1f }
                     .onGloballyPositioned { favoritesBottom = it.positionInRoot().y + it.size.height },
             ) {
+                if (!settings.widgetBelow) WidgetSlot(settings.widgetId, Modifier.padding(bottom = 20.dp))
                 state.media?.let {
                     MediaCard(it, actions.mediaPrevious, actions.mediaPlayPause, actions.mediaNext, Modifier.padding(bottom = 20.dp))
                 }
                 Favorites(state, actions, launch)
+                if (settings.widgetBelow) WidgetSlot(settings.widgetId, Modifier.padding(top = 20.dp))
             }
             Spacer(Modifier.height(SearchButtonSize + 12.dp))
         }
@@ -349,4 +353,22 @@ private fun SearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 private fun revealOptions(view: View, r: Rect?): Bundle? = r?.let {
     ActivityOptions.makeClipRevealAnimation(view, it.left, it.top, it.width(), it.height()).toBundle()
+}
+
+/** Quiet line under the clock while focus is on. */
+@Composable
+private fun FocusHint(focus: com.mono.launcher.data.FocusState, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val is24 = android.text.format.DateFormat.is24HourFormat(context)
+    val until = focus.until?.format(java.time.format.DateTimeFormatter.ofPattern(if (is24) "HH:mm" else "h:mm a", java.util.Locale.getDefault()))
+    Row(modifier.padding(start = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+        com.mono.launcher.ui.common.LineIcon(com.mono.launcher.ui.common.Icons.Target, 16.dp, com.mono.launcher.ui.theme.Mono.palette.accent)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            "Focus" + (until?.let { " · until $it" } ?: ""),
+            fontSize = 14.sp,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
 }

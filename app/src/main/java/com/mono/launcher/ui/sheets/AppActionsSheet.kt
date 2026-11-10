@@ -64,6 +64,8 @@ class AppSheetActions(
     val rename: (AppEntry) -> Unit,
     val setHidden: (AppEntry, Boolean) -> Unit,
     val toggleMute: (String) -> Unit,
+    val toggleDistracting: (String) -> Unit,
+    val toggleFocusApp: (String) -> Unit,
     val appInfo: (AppEntry) -> Unit,
     val uninstall: (AppEntry) -> Unit,
     val dismiss: () -> Unit,
@@ -76,6 +78,8 @@ fun AppActionsSheet(
     app: AppEntry,
     favoritesCount: Int,
     muted: Boolean,
+    distracting: Boolean,
+    focusHidden: Boolean,
     iconStyle: IconStyle,
     actions: AppSheetActions,
 ) {
@@ -139,6 +143,12 @@ fun AppActionsSheet(
             ActionRow(Icons.Pencil, "Rename") { actions.rename(app) }
             ActionRow(if (app.isHidden) Icons.Eye else Icons.EyeOff, if (app.isHidden) "Unhide" else "Hide") { actions.setHidden(app, !app.isHidden); actions.dismiss() }
             ActionRow(Icons.Bell, if (muted) "Show notifications on Home" else "Mute notifications on Home") { actions.toggleMute(app.packageName); actions.dismiss() }
+            ActionRow(Icons.Hourglass, if (distracting) "Open without a pause" else "Pause before opening") {
+                actions.toggleDistracting(app.packageName); actions.dismiss()
+            }
+            ActionRow(Icons.Target, if (focusHidden) "Show during focus" else "Hide during focus") {
+                actions.toggleFocusApp(app.packageName); actions.dismiss()
+            }
             ActionRow(Icons.Info, "App info") { actions.appInfo(app); actions.dismiss() }
             ActionRow(Icons.Trash, "Uninstall") { actions.uninstall(app); actions.dismiss() }
         }
