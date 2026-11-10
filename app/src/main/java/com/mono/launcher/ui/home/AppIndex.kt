@@ -110,8 +110,6 @@ private val Gap = 12.dp
 private val PanelInset = 20.dp
 private val WavePanelWidth = 228.dp
 private val WaveBase = 92.dp
-private val BubbleSize = 52.dp
-private val TouchRing = 56.dp
 
 /** Pixel geometry shared between composition and the pointer handler (not observed). */
 private class Geometry {
@@ -172,7 +170,6 @@ fun AppIndex(
 
     var touching by remember { mutableStateOf(false) }
     val wave = remember { mutableStateOf(Offset.Zero) } // last rail-zone touch; drives the curve
-    val finger = remember { mutableStateOf(Offset.Zero) } // live finger position, for the touch ring
     var inList by remember { mutableStateOf(false) }
     var activeIndex by remember { mutableIntStateOf(-1) }
     var lastIndex by remember { mutableIntStateOf(-1) }
@@ -368,55 +365,6 @@ fun AppIndex(
             }
         }
 
-        // --- WAVE: letter bubble beside the thumb -----------------------------------------
-        if (style == RailStyle.WAVE && shownIndex >= 0) {
-            val bubblePx = px(BubbleSize)
-            Box(
-                Modifier
-                    .offset {
-                        val w = wave.value
-                        val amp = (geo.waveBase + pullOf(w, geo, onRight)).coerceAtMost(geo.waveMax)
-                        val cx = if (onRight) geo.railCenterX - amp else geo.railCenterX + amp
-                        val absX = cx - bubblePx / 2f
-                        IntOffset((if (rtl) overlayW - absX - bubblePx else absX).roundToInt(), (w.y - bubblePx / 2f).roundToInt())
-                    }
-                    .graphicsLayer {
-                        val s = strength.value
-                        alpha = s * (if (inList) 0.35f else 1f)
-                        scaleX = 0.6f + 0.4f * s
-                        scaleY = 0.6f + 0.4f * s
-                    }
-                    .size(BubbleSize)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    groups.getOrNull(shownIndex)?.letter.orEmpty(),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-
-        // --- WAVE: soft ring under the finger ---------------------------------------------
-        if (style == RailStyle.WAVE) {
-            val ringPx = px(TouchRing)
-            val ringColor = MaterialTheme.colorScheme.onBackground
-            Box(
-                Modifier
-                    .offset {
-                        val f = finger.value
-                        val absX = f.x - ringPx / 2f
-                        IntOffset((if (rtl) overlayW - absX - ringPx else absX).roundToInt(), (f.y - ringPx / 2f).roundToInt())
-                    }
-                    .graphicsLayer { alpha = strength.value }
-                    .size(TouchRing)
-                    .background(ringColor.copy(alpha = 0.18f), CircleShape)
-                    .border(1.5.dp, ringColor.copy(alpha = 0.4f), CircleShape),
-            )
-        }
-
         // --- The rail ----------------------------------------------------------------------
         Column(
             Modifier
@@ -467,7 +415,6 @@ fun AppIndex(
 
                         fun update(local: Offset) {
                             val p = toOverlay(local)
-                            finger.value = p
                             val listZone = activeIndex >= 0 && when (style) {
                                 RailStyle.LIST -> false
                                 RailStyle.WAVE -> if (onRight) p.x < geo.panelLeft + geo.panelW else p.x > geo.panelLeft
