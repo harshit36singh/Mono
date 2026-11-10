@@ -64,7 +64,19 @@ class BackupManager @Inject constructor(
 
     suspend fun import(uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val text = context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() }
+            // Read at most MAX_IMPORT_BYTES so a wrong or huge file can't exhaust memory.
+            val bytes = context.contentResolver.openInputStream(uri)!!.use { input ->
+                val buf = java.io.ByteArrayOutputStream()
+                val chunk = ByteArray(8192)
+                while (true) {
+                    val n = input.read(chunk)
+                    if (n < 0) break
+                    buf.write(chunk, 0, n)
+                    require(buf.size() <= MAX_IMPORT_BYTES) { "File is too large to be a Mono backup" }
+                }
+                buf.toByteArray()
+            }
+            val text = bytes.decodeToString()
             val json = JSONObject(text)
             require(json.optString("format") == FORMAT) { "Not a Mono backup file" }
 
@@ -131,5 +143,6 @@ class BackupManager @Inject constructor(
 
     private companion object {
         const val FORMAT = "mono-launcher-backup"
+        const val MAX_IMPORT_BYTES = 512 * 1024
     }
 }

@@ -7,7 +7,6 @@ import android.content.ActivityNotFoundException
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
-import androidx.core.net.toUri
 import android.os.Build
 import android.provider.AlarmClock
 import android.provider.CalendarContract
@@ -78,8 +77,6 @@ object SystemActions {
             start(context, Intent(Settings.ACTION_SETTINGS))
         }
     }
-
-    fun openUrl(context: Context, url: String) = start(context, Intent(Intent.ACTION_VIEW, url.toUri()))
 
     fun start(context: Context, intent: Intent): Boolean = try {
         if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

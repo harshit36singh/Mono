@@ -109,6 +109,7 @@ In all three styles:
 ## Privacy
 - **No account, no server, no analytics.** Mono has no internet permission of its own.
 - Notification text and calendar events are read on the phone and never stored or sent anywhere.
+- **No cloud backup:** Mono opts out of Android's Google Drive backup and device-to-device transfer, so your app list, launch counts and focus settings never leave the phone. Use Export settings for your own backup file.
 - Fonts download through Google Play services' font provider, the same way system apps do.
 - Optional permissions, all off until you grant them:
 
@@ -116,7 +117,7 @@ In all three styles:
 |---|---|
 | Notification access | Inline notifications and the media card |
 | Calendar | "Today's next event" in the info widget |
-| Accessibility service | Double-tap to lock only; it never reads screen content |
+| Accessibility service | Double-tap to lock only; it subscribes to no events and can't read screen content |
 | Do Not Disturb access | Silent mode and Do Not Disturb in the Mono panel |
 | Modify system settings | The brightness slider in the Mono panel |
 
