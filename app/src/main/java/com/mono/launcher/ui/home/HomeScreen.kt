@@ -63,7 +63,11 @@ import com.mono.launcher.data.GestureAction
 import com.mono.launcher.data.RailSide
 import com.mono.launcher.system.SystemActions
 import com.mono.launcher.ui.HomeUiState
+import com.mono.launcher.ui.common.Mo
+import com.mono.launcher.ui.common.MoPose
 import com.mono.launcher.ui.common.rowGestures
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 import com.mono.launcher.ui.theme.LocalIsDark
 import kotlin.math.abs
 
@@ -197,12 +201,15 @@ private fun Favorites(state: HomeUiState, actions: HomeActions, launch: (AppEntr
     val favorites = state.apps.favorites
 
     if (favorites.isEmpty()) {
-        Text(
-            "Long-press any app in the A–Z rail or search to pin it here.",
-            fontSize = (15 * settings.fontScale).sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(vertical = 12.dp),
-        )
+        Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Mo(MoPose.RESTING, 48.dp)
+            Spacer(Modifier.width(14.dp))
+            Text(
+                "Long-press any app in the A–Z rail or search to pin it here.",
+                fontSize = (15 * settings.fontScale).sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         return
     }
 

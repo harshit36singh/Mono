@@ -36,6 +36,8 @@ import com.mono.launcher.data.AppEntry
 import com.mono.launcher.data.IconStyle
 import com.mono.launcher.notifications.NotificationState
 import com.mono.launcher.ui.common.AppIcon
+import com.mono.launcher.ui.common.CountBadge
+import com.mono.launcher.ui.common.WorkTag
 import kotlinx.coroutines.launch
 
 /**
@@ -149,32 +151,9 @@ private fun NotificationLine(
     )
 }
 
-@Composable
-private fun CountBadge(count: Int) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-    ) {
-        Text(
-            text = if (count > 1) "$count new" else "•",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(horizontal = if (count > 1) 7.dp else 6.dp, vertical = 1.dp),
-        )
-    }
-}
-
+/** Outlined "work" tag with leading space, as used after app names. */
 @Composable
 fun WorkBadge() {
-    Row(horizontalArrangement = Arrangement.Start) {
-        Spacer(Modifier.width(8.dp))
-        Surface(
-            shape = RoundedCornerShape(4.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ) {
-            Text("work", fontSize = 10.sp, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp))
-        }
-    }
+    Spacer(Modifier.width(10.dp))
+    WorkTag()
 }
