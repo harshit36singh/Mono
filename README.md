@@ -63,6 +63,25 @@ In all three styles:
 - **Wallpapers:** 29 hand-picked wallpapers built in. Preview each one with the clock on top, then set it for the Home screen, the Lock screen or both.
 - **Mo,** a small pebble mascot, appears in onboarding, empty states and the Settings footer, and is the app icon (with a themed version for Android's matching-icon mode).
 
+### Focus and calm
+- **Focus mode:** choose apps to hide, then start focus for 30 minutes, 1 hour or 2 hours, or set a schedule (start and end times, any days, including overnight).
+  - While focus is on, those apps and their notifications disappear from Home, the A–Z rail and search.
+  - A quiet "Focus · until 6:00 PM" line shows under the clock.
+- **Pause before opening:** mark apps as distracting (long-press, then "Pause before opening").
+  - Opening one shows a short breathing pause with Mo and a countdown ring (3, 5 or 10 seconds) before "Open anyway" unlocks.
+  - "Not now" takes you back to Home.
+
+### Mono panel (swipe down)
+- **Tiles:** flashlight, ringer (sound / vibrate / silent), Do Not Disturb, Focus, Wi-Fi, mobile data, Bluetooth, and Mono settings.
+- **Sliders:** brightness and media volume.
+- **System notifications:** a button that opens Android's own notification shade.
+- Wi-Fi, mobile data and Bluetooth open Android's small connection panels, since apps can't switch these directly on Android 10 and newer.
+- Silent mode and Do Not Disturb need Do Not Disturb access, and brightness needs "modify system settings". The panel asks the first time.
+
+### Widget
+- **Add one widget from any app** in Settings → Widget, and place it above or below your favorites.
+- **Change or remove it** from the same screen.
+
 ### Gestures
 | Gesture | Action |
 |---|---|
@@ -70,7 +89,7 @@ In all three styles:
 | Long-press an app | App actions |
 | Long-press and drag a favorite | Reorder |
 | Swipe up | Search |
-| Swipe down | Notification shade *(configurable)* |
+| Swipe down | Mono panel *(configurable; can open the system notification shade instead)* |
 | Double-tap empty space | Lock screen *(configurable; needs Mono's accessibility service)* |
 | Swipe right | Nothing by default *(configurable)* |
 | Long-press empty space | Mono settings |
@@ -94,6 +113,8 @@ In all three styles:
 | Notification access | Inline notifications and the media card |
 | Calendar | "Today's next event" in the info widget |
 | Accessibility service | Double-tap to lock only; it never reads screen content |
+| Do Not Disturb access | Silent mode and Do Not Disturb in the Mono panel |
+| Modify system settings | The brightness slider in the Mono panel |
 
 Mono finds your apps through Android's launcher interface, so it doesn't need permission to see every installed package.
 
@@ -141,9 +162,3 @@ After installing, press Home and pick **Mono**, or finish the in-app onboarding.
 
 ## Design
 - [`docs/DESIGN_BRIEF.md`](docs/DESIGN_BRIEF.md) describes every screen and state, with the original sizes, colours and motion.
-
-## Roadmap
-- A slot for widgets from other apps, above or below favorites.
-- Focus mode: scheduled quiet hours that hide chosen apps and their notifications.
-- Gentle "are you sure?" delay before opening apps you mark as distracting.
-- A Mono swipe-down panel with quick toggles.

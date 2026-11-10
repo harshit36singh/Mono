@@ -159,7 +159,9 @@ private fun WidgetRow(info: AppWidgetProviderInfo, onClick: () -> Unit) {
             }.getOrNull()
         }
     }
-    val cells = "${((info.minWidth + 30) / 70).coerceAtLeast(1)}×${((info.minHeight + 30) / 70).coerceAtLeast(1)}"
+    // minWidth/minHeight are in pixels; Android's cell formula is roughly (dp + 30) / 70.
+    val d = context.resources.displayMetrics.density
+    val cells = "${((info.minWidth / d + 30) / 70).toInt().coerceAtLeast(1)}×${((info.minHeight / d + 30) / 70).toInt().coerceAtLeast(1)}"
     Row(
         Modifier
             .fillMaxWidth()

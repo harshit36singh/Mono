@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -130,13 +131,20 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     var last = down.position
                     var stolen = false
+                    var dragging = false
+                    val slop = viewConfiguration.touchSlop
                     while (true) {
                         val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                        if (change.isConsumed && !change.changedToUp()) stolen = true
+                        val up = change.changedToUpIgnoreConsumed()
+                        // A child (rail, row drag, list scroll, notification swipe) took the movement.
+                        if (!up && !dragging && change.isConsumed) stolen = true
                         last = change.position
-                        if (change.changedToUp()) break
+                        if (!stolen && !dragging && (change.position - down.position).getDistance() > slop) dragging = true
+                        // Claim the swipe so the tap/double-tap detector doesn't also treat it as a tap.
+                        if (dragging && !up) change.consume()
+                        if (up) break
                     }
-                    if (stolen) return@awaitEachGesture
+                    if (stolen || !dragging) return@awaitEachGesture
                     val d = last - down.position
                     when {
                         abs(d.y) > abs(d.x) && d.y < -threshold -> actions.openSearch()
