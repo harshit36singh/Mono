@@ -61,7 +61,7 @@ In all three styles:
 - **Theme:** Light, Dark, follow the system, or Material You.
 - **Text size:** 80–140%, on top of the system font size.
 - **Rail side:** right or left edge, for left-handed use.
-- **Wallpapers:** 29 hand-picked wallpapers built in. Preview each one with the clock on top, then set it for the Home screen, the Lock screen or both.
+- **Wallpapers:** 34 hand-picked wallpapers built in. Preview each one with the clock on top, then set it for the Home screen, the Lock screen or both.
 - **Mo,** a small pebble mascot, appears in onboarding, empty states and the Settings footer, and is the app icon (with a themed version for Android's matching-icon mode).
 
 ### Focus and calm
@@ -126,7 +126,7 @@ Mono finds your apps through Android's launcher interface, so it doesn't need pe
 - No background polling: Mono updates only when Android reports a change (app installed or removed, new notification, alarm, battery level, minute tick). Focus checks the time once a minute, and only while Home is on screen.
 - Dragging along the rail updates only the drawing, not the whole screen, so it stays smooth. Icons load lazily and are cached in memory.
 - If the app database ever fails, Home falls back to an in-memory app list, so it never comes up blank.
-- The release app is about 7 MB, including the 29 wallpapers.
+- The release app is about 7 MB, including the 34 wallpapers.
 
 ---
 
