@@ -47,6 +47,7 @@ import com.mono.launcher.data.AppEntry
 import com.mono.launcher.data.GestureAction
 import com.mono.launcher.data.IconStyle
 import com.mono.launcher.data.RailSide
+import com.mono.launcher.data.RailStyle
 import com.mono.launcher.data.Settings
 import com.mono.launcher.data.ThemeMode
 import com.mono.launcher.notifications.MonoNotificationListener
@@ -130,11 +131,21 @@ fun SettingsScreen(
                 }
             }
             item {
+                ChoiceItem("Alphabet behaviour", RailStyle.entries, settings.railStyle, {
+                    when (it) {
+                        RailStyle.WAVE -> "Wave — letters curve around your thumb"
+                        RailStyle.POPOUT -> "Popout — compact card beside your thumb"
+                        RailStyle.LIST -> "List — full A–Z list, rail jumps to letter"
+                    }
+                }) { v -> actions.update { it.copy(railStyle = v) } }
+            }
+            item {
                 ChoiceItem("Icons", IconStyle.entries, settings.iconStyle, {
                     when (it) {
-                        IconStyle.NONE -> "No icons"
-                        IconStyle.SYSTEM -> "System icons"
-                        IconStyle.MONOCHROME -> "Monochrome icons"
+                        IconStyle.NONE -> "Text only"
+                        IconStyle.MINIMAL -> "Minimal — single-colour glyphs"
+                        IconStyle.MONOCHROME -> "Greyscale icons"
+                        IconStyle.SYSTEM -> "Full-colour icons"
                     }
                 }) { v -> actions.update { it.copy(iconStyle = v) } }
             }

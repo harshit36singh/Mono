@@ -93,6 +93,7 @@ private fun MonoRoot(vm: HomeViewModel) {
     val overlay by vm.overlay.collectAsStateWithLifecycle()
     val query by vm.query.collectAsStateWithLifecycle()
     val results by vm.searchResults.collectAsStateWithLifecycle()
+    val resetTick by vm.resetTick.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     if (!state.loaded) return
@@ -103,7 +104,7 @@ private fun MonoRoot(vm: HomeViewModel) {
 
     val homeActions = remember(vm) {
         HomeActions(
-            launch = { app, bounds -> vm.launch(app, bounds) },
+            launch = { app, bounds, options -> vm.launch(app, bounds, options) },
             showActions = { vm.show(Overlay.Actions(it)) },
             openSearch = { vm.show(Overlay.Search) },
             openSettings = { vm.show(Overlay.Settings) },
@@ -117,7 +118,7 @@ private fun MonoRoot(vm: HomeViewModel) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        HomeScreen(state, homeActions)
+        HomeScreen(state, homeActions, resetTick)
 
         AnimatedVisibility(
             visible = overlay == Overlay.Search,
