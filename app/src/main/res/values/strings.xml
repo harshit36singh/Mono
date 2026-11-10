@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mono</string>
+    <string name="accessibility_label">Mono – double-tap to lock</string>
+    <string name="accessibility_description">Mono uses this service only to lock the screen when you double-tap an empty area of the home screen. It does not read, collect or transmit any screen content.</string>
+</resources>
