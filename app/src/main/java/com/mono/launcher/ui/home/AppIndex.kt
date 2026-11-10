@@ -180,7 +180,11 @@ fun AppIndex(
 
     val strength: State<Float> = animateFloatAsState(
         targetValue = if (touching && style == RailStyle.WAVE) 1f else 0f,
-        animationSpec = spring(dampingRatio = 0.72f, stiffness = Spring.StiffnessMediumLow),
+        // Out: soft and springy. Back: a little quicker so the rail settles promptly.
+        animationSpec = spring(
+            dampingRatio = if (touching) 0.72f else 0.85f,
+            stiffness = if (touching) Spring.StiffnessMediumLow else Spring.StiffnessMedium,
+        ),
         label = "wave",
     )
 
@@ -474,14 +478,26 @@ fun AppIndex(
                             }
                         }
 
-                        update(down.position)
-                        while (true) {
-                            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                            change.consume()
-                            if (change.changedToUp()) break
-                            update(change.position)
+                        var released = false
+                        try {
+                            update(down.position)
+                            while (true) {
+                                val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                                change.consume()
+                                if (change.changedToUp() || !change.pressed) break
+                                update(change.position)
+                            }
+                            released = true
+                        } finally {
+                            // Always let the letters spring back, even when the system cancels the touch
+                            // (edge back-gesture, notification shade, window focus loss).
+                            touching = false
+                            if (!released) {
+                                hovered = -1
+                                inList = false
+                                if (style != RailStyle.LIST) activeIndex = -1
+                            }
                         }
-                        touching = false
 
                         val group = currentGroups.getOrNull(activeIndex)
                         val target = group?.apps?.getOrNull(hovered)
