@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,9 +63,10 @@ fun AppRow(
             append(": ${it.title} ${it.text}")
         }
     }
+    // Width hugs the content, so only the icon, name and notification line are tappable;
+    // the empty space beside them stays Home (double-tap, long-press, swipes).
     Column(
         modifier
-            .fillMaxWidth()
             .semantics(mergeDescendants = true) {
                 contentDescription = description
                 if (notification != null) {
@@ -129,7 +129,6 @@ private fun NotificationLine(
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier
             .padding(start = indent, top = 2.dp)
-            .fillMaxWidth()
             .graphicsLayer {
                 translationX = offset.value
                 alpha = 1f - (-offset.value / (threshold * 2)).coerceIn(0f, 0.8f)
