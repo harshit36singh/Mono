@@ -9,6 +9,7 @@ import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.Rect
 import android.net.Uri
+import android.os.Bundle
 import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
@@ -126,10 +127,10 @@ class AppRepository @Inject constructor(
         }.getOrNull()
     }
 
-    fun launch(app: AppEntry, bounds: Rect? = null): Boolean {
+    fun launch(app: AppEntry, bounds: Rect? = null, options: Bundle? = null): Boolean {
         val user = userOf(app.userSerial) ?: return false
         return try {
-            launcherApps.startMainActivity(ComponentName(app.packageName, app.activityName), user, bounds, null)
+            launcherApps.startMainActivity(ComponentName(app.packageName, app.activityName), user, bounds, options)
             scope.launch { runCatching { dao.recordLaunch(app.packageName, app.activityName, app.userSerial, System.currentTimeMillis()) } }
             true
         } catch (e: Exception) {

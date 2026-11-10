@@ -28,7 +28,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private object K {
         val onboarding = booleanPreferencesKey("onboarding_done")
         val railSide = stringPreferencesKey("rail_side")
-        val iconStyle = stringPreferencesKey("icon_style")
+        val iconStyle = stringPreferencesKey("icon_style_v2")
+        val railStyle = stringPreferencesKey("rail_style")
         val fontScale = floatPreferencesKey("font_scale")
         val theme = stringPreferencesKey("theme")
         val swipeDown = stringPreferencesKey("gesture_swipe_down")
@@ -54,6 +55,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         return Settings(
             onboardingDone = this[K.onboarding] ?: d.onboardingDone,
             railSide = enumOr(this[K.railSide], d.railSide),
+            railStyle = enumOr(this[K.railStyle], d.railStyle),
             iconStyle = enumOr(this[K.iconStyle], d.iconStyle),
             fontScale = this[K.fontScale] ?: d.fontScale,
             theme = enumOr(this[K.theme], d.theme),
@@ -69,6 +71,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private fun MutablePreferences.write(s: Settings) {
         this[K.onboarding] = s.onboardingDone
         this[K.railSide] = s.railSide.name
+        this[K.railStyle] = s.railStyle.name
         this[K.iconStyle] = s.iconStyle.name
         this[K.fontScale] = s.fontScale
         this[K.theme] = s.theme.name

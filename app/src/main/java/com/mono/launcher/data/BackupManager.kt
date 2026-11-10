@@ -25,6 +25,7 @@ class BackupManager @Inject constructor(
                 .put("version", 1)
                 .put("settings", JSONObject()
                     .put("railSide", s.railSide.name)
+                    .put("railStyle", s.railStyle.name)
                     .put("iconStyle", s.iconStyle.name)
                     .put("fontScale", s.fontScale.toDouble())
                     .put("theme", s.theme.name)
@@ -61,6 +62,7 @@ class BackupManager @Inject constructor(
                 settings.update { s ->
                     s.copy(
                         railSide = enumOr(o.optString("railSide"), s.railSide),
+                        railStyle = enumOr(o.optString("railStyle"), s.railStyle),
                         iconStyle = enumOr(o.optString("iconStyle"), s.iconStyle),
                         fontScale = o.optDouble("fontScale", s.fontScale.toDouble()).toFloat().coerceIn(0.8f, 1.4f),
                         theme = enumOr(o.optString("theme"), s.theme),
