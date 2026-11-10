@@ -3,7 +3,7 @@
 **A minimal, one-handed, text-first Android launcher.**
 Your favorite apps sit at the bottom of the screen within thumb reach, every other app is one slide away on the A–Z rail, and notifications appear as a single line under the app they belong to. No account, no ads, no tracking: everything stays on the phone.
 
-![Mono screens: Home in Colour and Mono, the A–Z wave and list, search, app actions, settings and wallpapers](docs/images/collage.jpg)
+![Mono: Home in Colour and Mono, the A–Z wave and list, search, app actions, settings and wallpapers](docs/images/collage.jpg)
 
 ---
 
