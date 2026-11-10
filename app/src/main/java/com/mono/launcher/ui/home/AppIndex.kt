@@ -39,6 +39,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,6 +59,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -73,6 +76,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -90,12 +94,14 @@ import com.mono.launcher.ui.FAVORITES_GROUP
 import com.mono.launcher.ui.WORK_GROUP
 import com.mono.launcher.ui.common.AppIcon
 import com.mono.launcher.ui.common.rowGestures
+import com.mono.launcher.ui.theme.LocalIsDark
 import kotlinx.coroutines.launch
 import kotlin.math.exp
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
 private val RailWidth = 30.dp
+private val EdgeInset = 14.dp
 private val HeaderHeight = 44.dp
 private val MaxItemHeight = 52.dp
 private val MinItemHeight = 34.dp
@@ -391,6 +397,8 @@ fun AppIndex(
             Modifier
                 .align(if (side == RailSide.RIGHT) Alignment.BottomEnd else Alignment.BottomStart)
                 .padding(bottom = bottomInset)
+                // Stay clear of the system back-gesture strip on the screen edge.
+                .padding(horizontal = EdgeInset)
                 .width(RailWidth)
                 .fillMaxHeight(0.6f)
                 .onGloballyPositioned { c ->
@@ -402,6 +410,8 @@ fun AppIndex(
                     geo.railW = c.size.width.toFloat()
                     geo.railH = c.size.height.toFloat()
                 }
+                // Android honours up to 200dp per edge; covers the lower part of the rail.
+                .systemGestureExclusion()
                 .pointerInput(style, onRight) {
                     awaitEachGesture {
                         val down = awaitFirstDown()
@@ -559,6 +569,7 @@ private fun RailLetter(
         else -> "Apps starting with ${group.letter}"
     }
     val color = MaterialTheme.colorScheme.onBackground
+    val shadowColor = if (LocalIsDark.current) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
     Box(
         modifier
             .fillMaxWidth()
@@ -574,6 +585,8 @@ private fun RailLetter(
             fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
             textAlign = TextAlign.Center,
             color = color.copy(alpha = if (group.isEmpty) 0.28f else if (active) 1f else 0.78f),
+            // Soft shadow keeps letters legible over bright wallpapers.
+            style = TextStyle(shadow = Shadow(color = shadowColor, blurRadius = 8f)),
             modifier = Modifier.graphicsLayer {
                 if (style == RailStyle.WAVE) {
                     // Read in the draw phase only: dragging never recomposes the rail.

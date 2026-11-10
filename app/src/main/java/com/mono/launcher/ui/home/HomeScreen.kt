@@ -150,8 +150,8 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
                 .fillMaxSize()
                 .graphicsLayer { alpha = homeAlpha }
                 .padding(
-                    start = if (railOnRight) 28.dp else 56.dp,
-                    end = if (railOnRight) 56.dp else 28.dp,
+                    start = if (railOnRight) 28.dp else 72.dp,
+                    end = if (railOnRight) 72.dp else 28.dp,
                     top = 40.dp,
                     bottom = 16.dp,
                 ),

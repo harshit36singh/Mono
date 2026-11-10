@@ -78,12 +78,12 @@ fun AppRow(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (iconStyle != IconStyle.NONE) {
-                AppIcon(app, iconStyle, (28 * fontScale).dp)
-                Spacer(Modifier.width(14.dp))
+                AppIcon(app, iconStyle, (24 * fontScale).dp)
+                Spacer(Modifier.width(18.dp))
             }
             Text(
                 text = app.displayLabel,
-                fontSize = (22 * fontScale).sp,
+                fontSize = (21 * fontScale).sp,
                 fontWeight = FontWeight.Normal,
                 color = colors.onBackground,
                 maxLines = 1,
@@ -98,7 +98,7 @@ fun AppRow(
         if (notification != null) {
             NotificationLine(
                 notification = notification,
-                indent = if (iconStyle != IconStyle.NONE) (28 * fontScale + 14).dp else 0.dp,
+                indent = if (iconStyle != IconStyle.NONE) (24 * fontScale + 18).dp else 0.dp,
                 fontScale = fontScale,
                 onOpen = onOpenNotification,
                 onDismiss = onDismissNotification,
