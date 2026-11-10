@@ -47,6 +47,7 @@ In all three styles:
 ### App actions (long-press any app)
 - App shortcuts (such as "New chat" or "Search") as chips.
 - Add to or remove from favorites, rename, hide, and mute notifications on Home.
+- Pause before opening (marks the app as distracting) and hide during focus.
 - App info and uninstall.
 
 ### Look and feel
@@ -64,6 +65,9 @@ In all three styles:
 - **Mo,** a small pebble mascot, appears in onboarding, empty states and the Settings footer, and is the app icon (with a themed version for Android's matching-icon mode).
 
 ### Focus and calm
+
+![Mono panel, pause before opening, focus mode and the widget picker](docs/images/features.jpg)
+
 - **Focus mode:** choose apps to hide, then start focus for 30 minutes, 1 hour or 2 hours, or set a schedule (start and end times, any days, including overnight).
   - While focus is on, those apps and their notifications disappear from Home, the A–Z rail and search.
   - A quiet "Focus · until 6:00 PM" line shows under the clock.
@@ -97,7 +101,7 @@ In all three styles:
 ### Setup and data
 - **Onboarding** in three steps: pick favorites, allow notification access (optional), set Mono as your Home app.
 - **Hidden apps:** hide an app from the rail and search; unhide it in Settings.
-- **Backup and restore:** export favorites, renames, hidden apps and settings to a JSON file, and import them again.
+- **Backup and restore:** export favorites, renames, hidden apps and settings (including focus and pause settings) to a JSON file, and import them again.
 - **Work profile:** work apps carry a "work" tag and get their own section on the rail.
 
 ---
@@ -119,7 +123,7 @@ In all three styles:
 Mono finds your apps through Android's launcher interface, so it doesn't need permission to see every installed package.
 
 ## Performance
-- No polling: Mono updates only when Android reports a change (app installed or removed, new notification, alarm, battery level, minute tick).
+- No background polling: Mono updates only when Android reports a change (app installed or removed, new notification, alarm, battery level, minute tick). Focus checks the time once a minute, and only while Home is on screen.
 - Dragging along the rail updates only the drawing, not the whole screen, so it stays smooth. Icons load lazily and are cached in memory.
 - If the app database ever fails, Home falls back to an in-memory app list, so it never comes up blank.
 - The release app is about 7 MB, including the 29 wallpapers.
@@ -132,23 +136,35 @@ Mono finds your apps through Android's launcher interface, so it doesn't need pe
 | Language / UI | Kotlin, Jetpack Compose, Material 3 |
 | Architecture | Single activity, MVVM, StateFlow, Hilt |
 | Storage | Room (apps, favorites, renames, launch counts), DataStore (settings) |
-| System APIs | LauncherApps, NotificationListenerService, MediaSessionManager, RoleManager, WallpaperManager, AccessibilityService, CalendarContract |
+| System APIs | LauncherApps, NotificationListenerService, MediaSessionManager, RoleManager, WallpaperManager, AppWidgetHost, AccessibilityService, CalendarContract, CameraManager (flashlight), AudioManager, NotificationManager (Do Not Disturb) |
 | Background | WorkManager (an occasional app-list refresh, as a safety net only) |
 | Min / target SDK | 26 (Android 8.0) / 36 |
 
 ```
 app/src/main/java/com/mono/launcher/
-├── data/            Room, DataStore, app repository, search, letter index, icons, backup
+├── data/            Room, DataStore, app repository, search, letter index, icons, focus schedule, backup
 ├── notifications/   notification listener and in-memory notification state
 ├── media/           now-playing session tracking
 ├── wallpaper/       built-in wallpaper catalog and setter
+├── widget/          app widget host, add/remove flow, Home widget slot
 ├── accessibility/   lock-screen service
-├── system/          system intents (clock, calendar, shade, default launcher)
-└── ui/              home, A–Z rail, search, sheets, settings, onboarding, theme, components
+├── system/          system intents and the panel's quick controls
+└── ui/
+    ├── home/        Home, A–Z rail (wave, popout, list), info widget, media card
+    ├── panel/       Mono swipe-down panel
+    ├── focus/       pause-before-opening screen
+    ├── search/      search
+    ├── sheets/      app actions and rename
+    ├── settings/    settings, wallpapers, widget, focus and pause sections
+    ├── onboarding/  first-run setup
+    ├── common/      icons, Mo, controls, haptics
+    └── theme/       colours, fonts, typography
 ```
 
 ## Build and install
 Requirements: JDK 17 and the Android SDK (compileSdk 36).
+
+To try Mono without building it, install the release APK on any phone running Android 8.0 or newer, then press Home and pick **Mono**.
 
 ```sh
 ./gradlew installRelease       # smoothest build; install on a connected phone
