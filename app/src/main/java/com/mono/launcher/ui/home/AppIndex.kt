@@ -64,14 +64,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -94,6 +92,7 @@ import com.mono.launcher.data.RailStyle
 import com.mono.launcher.ui.FAVORITES_GROUP
 import com.mono.launcher.ui.WORK_GROUP
 import com.mono.launcher.ui.common.AppIcon
+import com.mono.launcher.ui.common.rememberHaptics
 import com.mono.launcher.ui.common.rowGestures
 import com.mono.launcher.ui.theme.LocalIsDark
 import kotlinx.coroutines.launch
@@ -162,7 +161,7 @@ fun AppIndex(
     modifier: Modifier = Modifier,
 ) {
     if (groups.isEmpty()) return
-    val haptic = LocalHapticFeedback.current
+    val haptic = rememberHaptics()
     val density = LocalDensity.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     // RTL mirrors the rail: RIGHT means the end edge.
@@ -210,7 +209,7 @@ fun AppIndex(
     val currentLaunch by rememberUpdatedState(onLaunch)
 
     fun tick() {
-        if (haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        if (haptics) haptic.tick()
     }
 
     fun close() {
@@ -526,7 +525,7 @@ fun AppIndex(
                         val target = group?.apps?.getOrNull(hovered)
                         when {
                             target != null -> {
-                                if (haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                if (haptics) haptic.click()
                                 val rect = coords[0]?.let { o ->
                                     val tl = o.localToWindow(Offset(geo.panelLeft, geo.panelTop + geo.headerH + hovered * geo.itemH))
                                     Rect(tl.x.toInt(), tl.y.toInt(), (tl.x + geo.panelW).toInt(), (tl.y + geo.itemH).toInt())

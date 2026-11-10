@@ -44,14 +44,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -65,6 +63,7 @@ import com.mono.launcher.system.SystemActions
 import com.mono.launcher.ui.HomeUiState
 import com.mono.launcher.ui.common.Mo
 import com.mono.launcher.ui.common.MoPose
+import com.mono.launcher.ui.common.rememberHaptics
 import com.mono.launcher.ui.common.rowGestures
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
@@ -93,7 +92,7 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
     val launch: (AppEntry, Rect?) -> Unit = { app, r -> actions.launch(app, r, revealOptions(view, r)) }
     var indexActive by remember { mutableStateOf(false) }
     val homeAlpha by animateFloatAsState(if (indexActive) 0f else 1f, tween(if (indexActive) 120 else 200), label = "homeAlpha")
-    val haptic = LocalHapticFeedback.current
+    val haptic = rememberHaptics()
     val settings = state.settings
     val dark = LocalIsDark.current
     val currentSettings by rememberUpdatedState(settings)
@@ -142,7 +141,7 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
                 detectTapGestures(
                     onDoubleTap = { perform(currentSettings.doubleTap) },
                     onLongPress = {
-                        if (currentSettings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        if (currentSettings.haptics) haptic.click()
                         actions.openSettings()
                     },
                 )
@@ -197,7 +196,7 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
 @Composable
 private fun Favorites(state: HomeUiState, actions: HomeActions, launch: (AppEntry, Rect?) -> Unit) {
     val settings = state.settings
-    val haptic = LocalHapticFeedback.current
+    val haptic = rememberHaptics()
     val favorites = state.apps.favorites
 
     if (favorites.isEmpty()) {
@@ -230,7 +229,7 @@ private fun Favorites(state: HomeUiState, actions: HomeActions, launch: (AppEntr
     val byKey = favorites.associateBy { it.key }
 
     fun hapticTick() {
-        if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        if (settings.haptics) haptic.tick()
     }
 
     Column(Modifier.fillMaxWidth()) {
@@ -259,12 +258,12 @@ private fun Favorites(state: HomeUiState, actions: HomeActions, launch: (AppEntr
                     .rowGestures(
                         key = key,
                         onTap = {
-                            if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (settings.haptics) haptic.click()
                             launch(app, bounds[key])
                         },
                         onLongPress = { actions.showActions(app) },
                         onLongPressStart = {
-                            if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (settings.haptics) haptic.heavy()
                         },
                         onDragStart = {
                             dragging = key
