@@ -30,4 +30,6 @@ data class Settings(
     val mutedPackages: Set<String> = emptySet(),
     val showMediaCard: Boolean = true,
     val haptics: Boolean = true,
+    /** Id of the bundled wallpaper last applied from Mono, if any. */
+    val wallpaperId: String? = null,
 )

@@ -20,6 +20,9 @@ import com.mono.launcher.media.MediaRepository
 import com.mono.launcher.media.MediaState
 import com.mono.launcher.notifications.NotificationState
 import com.mono.launcher.notifications.NotificationStore
+import com.mono.launcher.wallpaper.Wallpaper
+import com.mono.launcher.wallpaper.WallpaperSetter
+import com.mono.launcher.wallpaper.WallpaperTarget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -70,6 +73,7 @@ class HomeViewModel @Inject constructor(
     private val notificationStore: NotificationStore,
     private val mediaRepo: MediaRepository,
     private val backup: BackupManager,
+    private val wallpapers: WallpaperSetter,
 ) : ViewModel() {
 
     private val appLists = repo.apps.map { all ->
@@ -219,4 +223,10 @@ class HomeViewModel @Inject constructor(
 
     fun exportBackup(uri: Uri, done: (Result<Unit>) -> Unit) = viewModelScope.launch { done(backup.export(uri)) }
     fun importBackup(uri: Uri, done: (Result<Unit>) -> Unit) = viewModelScope.launch { done(backup.import(uri)) }
+
+    fun applyWallpaper(wallpaper: Wallpaper, target: WallpaperTarget, done: (Result<Unit>) -> Unit) = viewModelScope.launch {
+        val result = wallpapers.apply(wallpaper, target)
+        if (result.isSuccess) settingsRepo.update { it.copy(wallpaperId = wallpaper.id) }
+        done(result)
+    }
 }

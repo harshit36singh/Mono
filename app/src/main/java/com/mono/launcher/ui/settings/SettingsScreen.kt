@@ -83,6 +83,8 @@ import com.mono.launcher.ui.common.Segmented
 import com.mono.launcher.ui.common.SettingGroup
 import com.mono.launcher.ui.common.Tile
 import com.mono.launcher.ui.theme.Mono
+import com.mono.launcher.wallpaper.Wallpaper
+import com.mono.launcher.wallpaper.WallpaperTarget
 import java.time.LocalDate
 
 class SettingsActions(
@@ -91,6 +93,7 @@ class SettingsActions(
     val toggleMute: (String) -> Unit,
     val export: (android.net.Uri, (Result<Unit>) -> Unit) -> Unit,
     val import: (android.net.Uri, (Result<Unit>) -> Unit) -> Unit,
+    val applyWallpaper: (Wallpaper, WallpaperTarget, (Result<Unit>) -> Unit) -> Unit,
     val close: () -> Unit,
 )
 
@@ -127,7 +130,9 @@ fun SettingsScreen(
         uri?.let { actions.import(it, report("Import")) }
     }
     val labelFor = remember(allApps) { allApps.associate { it.packageName to it.displayLabel } }
+    var previewing by remember { mutableStateOf<Wallpaper?>(null) }
 
+    Box(Modifier.fillMaxSize()) {
     Column(
         Modifier
             .fillMaxSize()
@@ -172,6 +177,14 @@ fun SettingsScreen(
                             if (a11yEnabled) "Accessibility service on" else "Needs accessibility service",
                             if (a11yEnabled) Status.DONE else Status.ACTION,
                         ) { SystemActions.openAccessibilitySettings(context) }
+                    }
+                }
+            }
+
+            item {
+                Section("Wallpaper") {
+                    SettingGroup(contentPadding = 0) {
+                        WallpaperCarousel(settings.wallpaperId) { previewing = it }
                     }
                 }
             }
@@ -282,6 +295,11 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    previewing?.let { wp ->
+        WallpaperPreview(wp, settings.fontScale, actions.applyWallpaper) { previewing = null }
+    }
     }
 }
 

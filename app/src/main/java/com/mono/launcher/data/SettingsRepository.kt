@@ -38,6 +38,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         val muted = stringSetPreferencesKey("muted_packages")
         val mediaCard = booleanPreferencesKey("media_card")
         val haptics = booleanPreferencesKey("haptics")
+        val wallpaper = stringPreferencesKey("wallpaper_id")
     }
 
     val settings: Flow<Settings> = store.data
@@ -65,6 +66,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             mutedPackages = this[K.muted] ?: d.mutedPackages,
             showMediaCard = this[K.mediaCard] ?: d.showMediaCard,
             haptics = this[K.haptics] ?: d.haptics,
+            wallpaperId = this[K.wallpaper],
         )
     }
 
@@ -81,6 +83,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         this[K.muted] = s.mutedPackages
         this[K.mediaCard] = s.showMediaCard
         this[K.haptics] = s.haptics
+        if (s.wallpaperId == null) remove(K.wallpaper) else this[K.wallpaper] = s.wallpaperId
     }
 
     private inline fun <reified E : Enum<E>> enumOr(raw: String?, default: E): E =

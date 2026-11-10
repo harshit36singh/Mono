@@ -154,6 +154,7 @@ private fun MonoRoot(vm: HomeViewModel) {
                     toggleMute = vm::toggleMute,
                     export = { uri, done -> vm.exportBackup(uri, done) },
                     import = { uri, done -> vm.importBackup(uri, done) },
+                    applyWallpaper = { wp, target, done -> vm.applyWallpaper(wp, target, done) },
                     close = vm::closeOverlay,
                 ),
             )
