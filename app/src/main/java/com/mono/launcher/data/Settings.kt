@@ -30,6 +30,10 @@ data class Settings(
     val mutedPackages: Set<String> = emptySet(),
     val showMediaCard: Boolean = true,
     val haptics: Boolean = true,
+    /** Mono's info block under the clock (alarm, calendar, battery). */
+    val infoWidget: Boolean = true,
+    /** Show today's next calendar event in the info block (needs READ_CALENDAR). */
+    val calendarOnHome: Boolean = false,
     /** Id of the bundled wallpaper last applied from Mono, if any. */
     val wallpaperId: String? = null,
 )

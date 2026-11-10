@@ -85,4 +85,20 @@ object Icons {
     val Trash = LineIconSpec("M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13")
     val Plus = LineIconSpec("M12 5v14M5 12h14", strokeWidth = 1.8f)
     val Shortcut = LineIconSpec("M7 17L17 7M9 7h8v8", strokeWidth = 1.8f)
+    val Alarm = LineIconSpec(circle(12f, 13f, 7f), "M12 9.5v3.5l2 2", "M5 4.5L3 6.5M19 4.5l2 2", strokeWidth = 1.7f)
+    val Calendar = LineIconSpec(
+        "M6 5.5h12a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z",
+        "M4 10h16M8.5 3.5v4M15.5 3.5v4",
+        strokeWidth = 1.7f,
+    )
+    val Battery = LineIconSpec(
+        "M5 8h12a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 17 16H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 8z",
+        "M21 11v2",
+        strokeWidth = 1.7f,
+    )
+    val BatteryCharging = LineIconSpec(
+        "M5 8h12a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 17 16H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 8z",
+        "M21 11v2M11.5 9.5l-2 3h3l-2 3",
+        strokeWidth = 1.7f,
+    )
 }

@@ -1,6 +1,9 @@
 package com.mono.launcher.ui.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -130,6 +133,14 @@ fun SettingsScreen(
         uri?.let { actions.import(it, report("Import")) }
     }
     val labelFor = remember(allApps) { allApps.associate { it.packageName to it.displayLabel } }
+    val calendarGranted = remember(tick) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
+    }
+    val calendarPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        tick++
+        if (granted) actions.update { it.copy(calendarOnHome = true) }
+        else Toast.makeText(context, "Calendar access is needed to show events", Toast.LENGTH_SHORT).show()
+    }
     var previewing by remember { mutableStateOf<Wallpaper?>(null) }
 
     Box(Modifier.fillMaxSize()) {
@@ -246,6 +257,13 @@ fun SettingsScreen(
                                 )
                             }
                             Column {
+                                SwitchRow("Info widget", settings.infoWidget) { v -> actions.update { it.copy(infoWidget = v) } }
+                                if (settings.infoWidget) {
+                                    SwitchRow("Calendar on Home", settings.calendarOnHome && calendarGranted) { v ->
+                                        if (v && !calendarGranted) calendarPermission.launch(Manifest.permission.READ_CALENDAR)
+                                        else actions.update { it.copy(calendarOnHome = v) }
+                                    }
+                                }
                                 SwitchRow("Media card", settings.showMediaCard) { v -> actions.update { it.copy(showMediaCard = v) } }
                                 SwitchRow("Haptics", settings.haptics) { v -> actions.update { it.copy(haptics = v) } }
                             }

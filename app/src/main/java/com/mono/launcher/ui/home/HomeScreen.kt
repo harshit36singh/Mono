@@ -160,6 +160,9 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
                 ),
         ) {
             ClockHeader(settings.fontScale)
+            if (settings.infoWidget) {
+                InfoWidget(settings.calendarOnHome, settings.fontScale, Modifier.padding(top = 20.dp))
+            }
             // Top third stays empty by design: everything interactive sits within thumb reach.
             Spacer(Modifier.weight(1f))
             state.media?.let {

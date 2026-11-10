@@ -34,7 +34,8 @@ class BackupManager @Inject constructor(
                     .put("swipeRight", s.swipeRight.name)
                     .put("mutedPackages", JSONArray(s.mutedPackages.toList()))
                     .put("showMediaCard", s.showMediaCard)
-                    .put("haptics", s.haptics))
+                    .put("haptics", s.haptics)
+                    .put("infoWidget", s.infoWidget))
                 .put("apps", JSONArray().apply {
                     apps.allEntries()
                         .filter { it.isFavorite || it.isHidden || it.customLabel != null }
@@ -74,6 +75,7 @@ class BackupManager @Inject constructor(
                         } ?: s.mutedPackages,
                         showMediaCard = o.optBoolean("showMediaCard", s.showMediaCard),
                         haptics = o.optBoolean("haptics", s.haptics),
+                        infoWidget = o.optBoolean("infoWidget", s.infoWidget),
                     )
                 }
             }
