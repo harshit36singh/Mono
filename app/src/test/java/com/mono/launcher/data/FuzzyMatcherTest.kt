@@ -34,7 +34,7 @@ class FuzzyMatcherTest {
 
     @Test fun rankOrdersByScoreThenTieBreak() {
         // "Clock" and "Crown" score the same, so the tie-break decides.
-        val ranked = FuzzyMatcher.rank("c", listOf("Clock", "Crown", "Music"), { it }, { if (it == "Crown") 5 else 0 })
+        val ranked = FuzzyMatcher.rank("c", listOf("Clock", "Crown", "Photos"), { it }, { if (it == "Crown") 5 else 0 })
         assertEquals(listOf("Crown", "Clock"), ranked)
     }
 }
