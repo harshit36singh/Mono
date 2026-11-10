@@ -70,6 +70,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
@@ -154,6 +155,10 @@ fun AppIndex(
     haptics: Boolean,
     resetTick: Int,
     bottomInset: Dp,
+    /** Root-y of the bottom of the clock/widget; the wave list never goes above it. 0 = unknown. */
+    waveTop: Float = 0f,
+    /** Root-y of the bottom of the favorites; the wave list is anchored here. 0 = unknown. */
+    waveBottom: Float = 0f,
     onActiveChange: (Boolean) -> Unit,
     onLaunch: (AppEntry, Rect?) -> Unit,
     onLongPress: (AppEntry) -> Unit,
@@ -233,7 +238,13 @@ fun AppIndex(
         else -> -1
     }
 
-    BoxWithConstraints(modifier.fillMaxSize().onGloballyPositioned { coords[0] = it }) {
+    var overlayRootY by remember { mutableFloatStateOf(0f) }
+    BoxWithConstraints(
+        modifier.fillMaxSize().onGloballyPositioned {
+            coords[0] = it
+            overlayRootY = it.positionInRoot().y
+        },
+    ) {
         val overlayW = constraints.maxWidth.toFloat()
         val overlayH = constraints.maxHeight.toFloat()
         val px = { d: Dp -> with(density) { d.toPx() } }
@@ -241,7 +252,14 @@ fun AppIndex(
         val shownIndex = if (activeIndex >= 0) activeIndex else lastIndex
         val items = groups.getOrNull(shownIndex)?.apps.orEmpty()
         val headerPx = if (style == RailStyle.WAVE) px(HeaderHeight) else 0f
-        val maxListH = overlayH * (if (style == RailStyle.WAVE) 0.62f else 0.78f) - headerPx
+        // Wave: the list sits where the favorites are, between the clock area and the favorites' bottom.
+        val waveAnchor = if (waveBottom > 0f) waveBottom - overlayRootY else overlayH - px(bottomInset)
+        val waveLimit = if (waveTop > 0f) (waveTop - overlayRootY + px(Gap)).coerceAtLeast(0f) else 0f
+        val maxListH = if (style == RailStyle.WAVE) {
+            (waveAnchor - waveLimit - headerPx).coerceAtLeast(px(MinItemHeight) * 3)
+        } else {
+            overlayH * 0.78f - headerPx
+        }
         val itemPx = if (items.isEmpty()) px(MaxItemHeight) else (maxListH / items.size).coerceIn(px(MinItemHeight), px(MaxItemHeight))
         val fit = minOf(items.size, floor(maxListH / itemPx).toInt().coerceAtLeast(1))
         val panelH = headerPx + fit * itemPx
@@ -252,7 +270,7 @@ fun AppIndex(
         if (style == RailStyle.WAVE) {
             panelW = px(WavePanelWidth).coerceAtMost(overlayW * 0.62f)
             panelLeft = if (onRight) px(PanelInset) else overlayW - px(PanelInset) - panelW
-            panelTop = (overlayH * 0.46f - panelH / 2f).coerceIn(0f, (overlayH - panelH).coerceAtLeast(0f))
+            panelTop = (waveAnchor - panelH).coerceIn(0f, (overlayH - panelH).coerceAtLeast(0f))
         } else {
             panelW = px(PopoutWidth).coerceAtMost(overlayW - railW - px(Gap) * 2)
             panelLeft = if (onRight) overlayW - railW - px(Gap) - panelW else railW + px(Gap)

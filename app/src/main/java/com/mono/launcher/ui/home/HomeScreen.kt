@@ -49,6 +49,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import com.mono.launcher.data.RailStyle
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -91,6 +93,9 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
     // Apps open with a clip-reveal from the row that was touched.
     val launch: (AppEntry, Rect?) -> Unit = { app, r -> actions.launch(app, r, revealOptions(view, r)) }
     var indexActive by remember { mutableStateOf(false) }
+    // Root-coordinate edges the wave list fits between: below the clock/widget, down to the favorites' bottom.
+    var headerBottom by remember { mutableFloatStateOf(0f) }
+    var favoritesBottom by remember { mutableFloatStateOf(0f) }
     val homeAlpha by animateFloatAsState(if (indexActive) 0f else 1f, tween(if (indexActive) 120 else 200), label = "homeAlpha")
     val haptic = rememberHaptics()
     val settings = state.settings
@@ -151,7 +156,8 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
         Column(
             Modifier
                 .fillMaxSize()
-                .graphicsLayer { alpha = homeAlpha }
+                // List style covers the whole screen; Wave only replaces the favorites.
+                .graphicsLayer { alpha = if (settings.railStyle == RailStyle.LIST) homeAlpha else 1f }
                 .padding(
                     start = if (railOnRight) 28.dp else 72.dp,
                     end = if (railOnRight) 72.dp else 28.dp,
@@ -159,16 +165,25 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
                     bottom = 16.dp,
                 ),
         ) {
-            ClockHeader(settings.fontScale)
-            if (settings.infoWidget) {
-                InfoWidget(settings.calendarOnHome, settings.fontScale, Modifier.padding(top = 20.dp))
+            Column(Modifier.onGloballyPositioned { headerBottom = it.positionInRoot().y + it.size.height }) {
+                ClockHeader(settings.fontScale)
+                if (settings.infoWidget) {
+                    InfoWidget(settings.calendarOnHome, settings.fontScale, Modifier.padding(top = 20.dp))
+                }
             }
             // Top third stays empty by design: everything interactive sits within thumb reach.
             Spacer(Modifier.weight(1f))
-            state.media?.let {
-                MediaCard(it, actions.mediaPrevious, actions.mediaPlayPause, actions.mediaNext, Modifier.padding(bottom = 20.dp))
+            // While the wave rail is in use, its app list takes this spot; the clock stays.
+            Column(
+                Modifier
+                    .graphicsLayer { alpha = if (settings.railStyle == RailStyle.WAVE) homeAlpha else 1f }
+                    .onGloballyPositioned { favoritesBottom = it.positionInRoot().y + it.size.height },
+            ) {
+                state.media?.let {
+                    MediaCard(it, actions.mediaPrevious, actions.mediaPlayPause, actions.mediaNext, Modifier.padding(bottom = 20.dp))
+                }
+                Favorites(state, actions, launch)
             }
-            Favorites(state, actions, launch)
             Spacer(Modifier.height(SearchButtonSize + 12.dp))
         }
 
@@ -188,6 +203,8 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
             haptics = settings.haptics,
             resetTick = resetTick,
             bottomInset = SearchButtonSize + 24.dp,
+            waveTop = headerBottom,
+            waveBottom = favoritesBottom,
             onActiveChange = { indexActive = it },
             onLaunch = launch,
             onLongPress = actions.showActions,
