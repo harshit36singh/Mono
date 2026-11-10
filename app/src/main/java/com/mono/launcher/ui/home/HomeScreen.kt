@@ -78,6 +78,7 @@ class HomeActions(
     val showActions: (AppEntry) -> Unit,
     val openSearch: () -> Unit,
     val openSettings: () -> Unit,
+    val openPanel: () -> Unit,
     val openNotification: (AppEntry) -> Unit,
     val dismissNotification: (String) -> Unit,
     val reorderFavorites: (List<AppKey>) -> Unit,
@@ -105,6 +106,7 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, resetTick: Int) {
     fun perform(action: GestureAction) {
         when (action) {
             GestureAction.NONE -> Unit
+            GestureAction.MONO_PANEL -> actions.openPanel()
             GestureAction.NOTIFICATION_SHADE -> SystemActions.expandNotifications(context)
             GestureAction.LOCK_SCREEN -> SystemActions.lockScreen(context)
             GestureAction.SEARCH -> actions.openSearch()

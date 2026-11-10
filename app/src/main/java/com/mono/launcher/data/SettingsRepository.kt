@@ -8,6 +8,8 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -43,6 +45,16 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         val wallpaper = stringPreferencesKey("wallpaper_id")
         val infoWidget = booleanPreferencesKey("info_widget")
         val calendar = booleanPreferencesKey("calendar_on_home")
+        val widgetId = intPreferencesKey("widget_id")
+        val widgetBelow = booleanPreferencesKey("widget_below")
+        val focusApps = stringSetPreferencesKey("focus_apps")
+        val focusEnabled = booleanPreferencesKey("focus_enabled")
+        val focusStart = intPreferencesKey("focus_start")
+        val focusEnd = intPreferencesKey("focus_end")
+        val focusDays = stringSetPreferencesKey("focus_days")
+        val focusUntil = longPreferencesKey("focus_until")
+        val distracting = stringSetPreferencesKey("distracting_apps")
+        val nudgeSeconds = intPreferencesKey("nudge_seconds")
     }
 
     val settings: Flow<Settings> = store.data
@@ -75,6 +87,18 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             wallpaperId = this[K.wallpaper],
             infoWidget = this[K.infoWidget] ?: d.infoWidget,
             calendarOnHome = this[K.calendar] ?: d.calendarOnHome,
+            widgetId = this[K.widgetId] ?: d.widgetId,
+            widgetBelow = this[K.widgetBelow] ?: d.widgetBelow,
+            focusApps = this[K.focusApps] ?: d.focusApps,
+            focusSchedule = FocusSchedule(
+                enabled = this[K.focusEnabled] ?: d.focusSchedule.enabled,
+                start = this[K.focusStart] ?: d.focusSchedule.start,
+                end = this[K.focusEnd] ?: d.focusSchedule.end,
+                days = this[K.focusDays]?.mapNotNull { it.toIntOrNull() }?.toSet() ?: d.focusSchedule.days,
+            ),
+            focusUntil = this[K.focusUntil] ?: d.focusUntil,
+            distractingApps = this[K.distracting] ?: d.distractingApps,
+            nudgeSeconds = this[K.nudgeSeconds] ?: d.nudgeSeconds,
         )
     }
 
@@ -96,6 +120,16 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         if (s.wallpaperId == null) remove(K.wallpaper) else this[K.wallpaper] = s.wallpaperId
         this[K.infoWidget] = s.infoWidget
         this[K.calendar] = s.calendarOnHome
+        this[K.widgetId] = s.widgetId
+        this[K.widgetBelow] = s.widgetBelow
+        this[K.focusApps] = s.focusApps
+        this[K.focusEnabled] = s.focusSchedule.enabled
+        this[K.focusStart] = s.focusSchedule.start
+        this[K.focusEnd] = s.focusSchedule.end
+        this[K.focusDays] = s.focusSchedule.days.map { it.toString() }.toSet()
+        this[K.focusUntil] = s.focusUntil
+        this[K.distracting] = s.distractingApps
+        this[K.nudgeSeconds] = s.nudgeSeconds
     }
 
     private inline fun <reified E : Enum<E>> enumOr(raw: String?, default: E): E =

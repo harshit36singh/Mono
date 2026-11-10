@@ -10,6 +10,8 @@ import com.mono.launcher.data.AppEntry
 import com.mono.launcher.data.AppKey
 import com.mono.launcher.data.AppRepository
 import com.mono.launcher.data.BackupManager
+import com.mono.launcher.data.Focus
+import com.mono.launcher.data.FocusState
 import com.mono.launcher.data.FuzzyMatcher
 import com.mono.launcher.data.LetterGroup
 import com.mono.launcher.data.LetterIndex
@@ -29,7 +31,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -48,6 +53,8 @@ data class AppLists(
     val visible: List<AppEntry> = emptyList(),
     val hidden: List<AppEntry> = emptyList(),
     val groups: List<LetterGroup> = emptyList(),
+    /** Every installed app regardless of hidden/focus state (for settings pickers). */
+    val all: List<AppEntry> = emptyList(),
 )
 
 data class HomeUiState(
@@ -56,6 +63,7 @@ data class HomeUiState(
     val apps: AppLists = AppLists(),
     val notifications: Map<String, NotificationState> = emptyMap(),
     val media: MediaState? = null,
+    val focus: FocusState = FocusState(false),
 )
 
 sealed interface Overlay {
@@ -64,6 +72,10 @@ sealed interface Overlay {
     data object Settings : Overlay
     data class Actions(val app: AppEntry) : Overlay
     data class Rename(val app: AppEntry) : Overlay
+    /** Short pause before opening an app marked as distracting. */
+    data class Nudge(val app: AppEntry, val bounds: Rect?, val options: Bundle?) : Overlay
+    /** Mono's swipe-down panel. */
+    data object Panel : Overlay
 }
 
 @HiltViewModel
@@ -76,8 +88,24 @@ class HomeViewModel @Inject constructor(
     private val wallpapers: WallpaperSetter,
 ) : ViewModel() {
 
-    private val appLists = repo.apps.map { all ->
-        val visible = all.filterNot { it.isHidden }
+    /** Re-evaluates focus every minute while Home is observed (cheap; no background work). */
+    private val minuteTicker = flow {
+        while (true) {
+            emit(System.currentTimeMillis())
+            delay(60_000L - System.currentTimeMillis() % 60_000L)
+        }
+    }
+
+    private val focusState: StateFlow<FocusState> = combine(settingsRepo.settings, minuteTicker) { s, _ -> Focus.state(s) }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, FocusState(false))
+
+    /** Packages hidden right now because focus is on. */
+    private val focusHidden = combine(settingsRepo.settings, focusState) { s, f -> if (f.active) s.focusApps else emptySet() }
+        .distinctUntilChanged()
+
+    private val appLists = combine(repo.apps, focusHidden) { all, focusHide ->
+        val visible = all.filterNot { it.isHidden || it.packageName in focusHide }
         val personal = visible.filterNot { it.isWorkProfile }
         val work = visible.filter { it.isWorkProfile }
         val favorites = visible.filter { it.isFavorite }.sortedBy { it.favoriteOrder ?: Int.MAX_VALUE }
@@ -91,6 +119,7 @@ class HomeViewModel @Inject constructor(
             visible = visible,
             hidden = all.filter { it.isHidden }.sortedBy { it.displayLabel.lowercase() },
             groups = groups,
+            all = all.sortedBy { it.displayLabel.lowercase() },
         )
     }.flowOn(Dispatchers.Default)
 
@@ -99,13 +128,16 @@ class HomeViewModel @Inject constructor(
         settingsRepo.settings,
         notificationStore.byPackage,
         mediaRepo.state,
-    ) { lists, settings, notifs, media ->
+        focusState,
+    ) { lists, settings, notifs, media, focus ->
+        val focusHide = if (focus.active) settings.focusApps else emptySet()
         HomeUiState(
             loaded = true,
             settings = settings,
             apps = lists,
-            notifications = notifs.filterKeys { it !in settings.mutedPackages },
+            notifications = notifs.filterKeys { it !in settings.mutedPackages && it !in focusHide },
             media = media.takeIf { settings.showMediaCard },
+            focus = focus,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, HomeUiState())
 
@@ -163,6 +195,15 @@ class HomeViewModel @Inject constructor(
     // --- apps -----------------------------------------------------------------------------
 
     fun launch(app: AppEntry, bounds: Rect? = null, options: Bundle? = null): Boolean {
+        if (app.packageName in state.value.settings.distractingApps) {
+            _overlay.value = Overlay.Nudge(app, bounds, options)
+            return true
+        }
+        return launchNow(app, bounds, options)
+    }
+
+    /** Opens without the distraction pause (used by "Open anyway"). */
+    fun launchNow(app: AppEntry, bounds: Rect? = null, options: Bundle? = null): Boolean {
         val ok = repo.launch(app, bounds, options)
         if (ok && _overlay.value != Overlay.Settings) _overlay.value = Overlay.None
         return ok
@@ -186,6 +227,21 @@ class HomeViewModel @Inject constructor(
     fun reorderFavorites(order: List<AppKey>) = viewModelScope.launch { repo.reorderFavorites(order) }
 
     fun setHidden(app: AppEntry, hidden: Boolean) = viewModelScope.launch { repo.setHidden(app, hidden) }
+
+    // --- focus & distraction ------------------------------------------------------------
+
+    fun toggleDistracting(packageName: String) = updateSettings { s ->
+        s.copy(distractingApps = if (packageName in s.distractingApps) s.distractingApps - packageName else s.distractingApps + packageName)
+    }
+
+    fun toggleFocusApp(packageName: String) = updateSettings { s ->
+        s.copy(focusApps = if (packageName in s.focusApps) s.focusApps - packageName else s.focusApps + packageName)
+    }
+
+    fun startFocus(minutes: Int) = updateSettings { it.copy(focusUntil = System.currentTimeMillis() + minutes * 60_000L) }
+
+    /** Ends manual focus now. A running schedule can only be paused by switching it off. */
+    fun endFocus() = updateSettings { it.copy(focusUntil = 0L) }
 
     fun rename(app: AppEntry, label: String?) = viewModelScope.launch {
         repo.rename(app, label)

@@ -578,6 +578,7 @@ private fun iconStyleName(s: IconStyle) = when (s) {
 
 private fun gestureName(g: GestureAction) = when (g) {
     GestureAction.NONE -> "Do nothing"
+    GestureAction.MONO_PANEL -> "Mono panel"
     GestureAction.NOTIFICATION_SHADE -> "Notification shade"
     GestureAction.LOCK_SCREEN -> "Lock screen"
     GestureAction.SEARCH -> "Search"

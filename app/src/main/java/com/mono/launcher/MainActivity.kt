@@ -108,6 +108,7 @@ private fun MonoRoot(vm: HomeViewModel) {
             showActions = { vm.show(Overlay.Actions(it)) },
             openSearch = { vm.show(Overlay.Search) },
             openSettings = { vm.show(Overlay.Settings) },
+            openPanel = { vm.show(Overlay.Panel) },
             openNotification = vm::openNotification,
             dismissNotification = vm::dismissNotification,
             reorderFavorites = { vm.reorderFavorites(it) },
