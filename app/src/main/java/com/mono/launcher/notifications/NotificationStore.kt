@@ -18,6 +18,7 @@ data class NotificationState(
     val count: Int,
     val keys: List<String>,
     val contentIntent: PendingIntent?,
+    val autoCancel: Boolean,
 )
 
 @Singleton
@@ -55,5 +56,10 @@ class NotificationStore @Inject constructor() {
     fun open(packageName: String): Boolean {
         val intent = _byPackage.value[packageName]?.contentIntent ?: return false
         return runCatching { intent.send() }.isSuccess
+    }
+
+    /** Mirrors the shade: tapping an auto-cancel notification removes it. */
+    fun dismissIfAutoCancel(packageName: String) {
+        if (_byPackage.value[packageName]?.autoCancel == true) dismiss(packageName)
     }
 }

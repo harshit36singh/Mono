@@ -70,6 +70,7 @@ class MonoNotificationListener : NotificationListenerService() {
                 count = list.size,
                 keys = list.map { it.key },
                 contentIntent = latest.notification.contentIntent,
+                autoCancel = latest.notification.flags and Notification.FLAG_AUTO_CANCEL != 0,
             )
         }
         store.publish(map)
