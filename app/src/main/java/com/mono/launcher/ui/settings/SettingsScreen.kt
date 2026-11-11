@@ -382,7 +382,7 @@ private fun AccessibilityDisclosure(onAgree: () -> Unit, onDecline: () -> Unit) 
     )
 }
 
-private const val PRIVACY_POLICY_URL = "https://github.com/harshit36singh/Mono/blob/main/PRIVACY.md"
+private const val PRIVACY_POLICY_URL = "https://github.com/harshit36singh/mono-privacy/blob/main/PRIVACY.md"
 
 @Composable
 internal fun Section(title: String, content: @Composable () -> Unit) {

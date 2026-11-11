@@ -37,4 +37,4 @@ If this policy changes, the new version will be posted on this page with a new d
 
 ## Contact
 
-Questions or requests: open an issue at https://github.com/harshit36singh/Mono/issues.
+Questions or requests: open an issue at https://github.com/harshit36singh/mono-privacy/issues.
