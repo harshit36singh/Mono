@@ -33,12 +33,14 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -129,6 +131,7 @@ fun SettingsScreen(
     // Re-read permission state whenever we come back from system settings.
     val notifGranted = remember(tick) { MonoNotificationListener.isEnabled(context) }
     val a11yEnabled = remember(tick) { LockAccessibilityService.isEnabled(context) }
+    var showA11yDisclosure by remember { mutableStateOf(false) }
     val isDefault = remember(tick) { SystemActions.isDefaultLauncher(context) }
 
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { tick++ }
@@ -198,7 +201,7 @@ fun SettingsScreen(
                             "Double-tap to lock",
                             if (a11yEnabled) "Accessibility service on" else "Needs accessibility service",
                             if (a11yEnabled) Status.DONE else Status.ACTION,
-                        ) { SystemActions.openAccessibilitySettings(context) }
+                        ) { if (a11yEnabled) SystemActions.openAccessibilitySettings(context) else showA11yDisclosure = true }
                     }
                 }
             }
@@ -343,6 +346,12 @@ fun SettingsScreen(
         }
     }
 
+    if (showA11yDisclosure) {
+        AccessibilityDisclosure(
+            onAgree = { showA11yDisclosure = false; SystemActions.openAccessibilitySettings(context) },
+            onDecline = { showA11yDisclosure = false },
+        )
+    }
     if (pickingWidget) {
         WidgetPicker(onPick = actions.pickWidget, onClose = { pickingWidget = false })
     }
@@ -350,6 +359,27 @@ fun SettingsScreen(
         WallpaperPreview(wp, settings.fontScale, actions.applyWallpaper) { previewing = null }
     }
     }
+}
+
+/** Prominent disclosure required by Google Play before asking for the accessibility service. */
+@Composable
+private fun AccessibilityDisclosure(onAgree: () -> Unit, onDecline: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDecline,
+        title = { Text("Use the accessibility service?") },
+        text = {
+            Text(
+                "Mono uses the Android Accessibility Service API only to lock your screen when you " +
+                    "double-tap an empty area of the home screen, and to open the notification shade " +
+                    "from a Home gesture.\n\n" +
+                    "Mono does not read screen content, see which app you use, or collect, store or " +
+                    "share any data through this service.\n\n" +
+                    "If you agree, Android's Accessibility settings will open. Choose Mono and turn it on.",
+            )
+        },
+        confirmButton = { TextButton(onClick = onAgree) { Text("Agree") } },
+        dismissButton = { TextButton(onClick = onDecline) { Text("No thanks") } },
+    )
 }
 
 private const val PRIVACY_POLICY_URL = "https://github.com/harshit36singh/Mono/blob/main/PRIVACY.md"
