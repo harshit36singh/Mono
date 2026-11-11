@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -118,6 +119,7 @@ fun SettingsScreen(
     actions: SettingsActions,
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val c = MaterialTheme.colorScheme
     var tick by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) {
@@ -322,6 +324,7 @@ fun SettingsScreen(
                         }
                         ValueRow("Export settings") { exporter.launch("mono-backup-${LocalDate.now()}.json") }
                         ValueRow("Import settings") { importer.launch(arrayOf("application/json", "text/plain", "*/*")) }
+                        ValueRow("Privacy policy") { runCatching { uriHandler.openUri(PRIVACY_POLICY_URL) } }
                     }
                 }
             }
@@ -348,6 +351,8 @@ fun SettingsScreen(
     }
     }
 }
+
+private const val PRIVACY_POLICY_URL = "https://github.com/harshit36singh/Mono/blob/main/PRIVACY.md"
 
 @Composable
 internal fun Section(title: String, content: @Composable () -> Unit) {
